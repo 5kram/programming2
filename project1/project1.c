@@ -42,17 +42,20 @@ int find (struct database *db, int uni_register, int sorted) {
     int i, start, middle, end, comparisons = 0;
     // Sorted -> Binary Search
     if (sorted == YES) {
+        //printf("Sorted");
         start = 0;
-        end = db->students - 1; 
+        end = db->students - 1;
+       
         do {
-            middle = (end + start) / 2;
+            middle = start + (end - start) / 2;
+            //printf("start -> %d, end -> %d, students -> %d\n", start, end, db->students);
             comparisons++;
             if (db->entries[middle].uni_register == uni_register) {
                 fprintf(stderr, "\n%d\n", comparisons);
                 return middle;
             }
             comparisons++;
-            if (db->entries[middle].uni_register > uni_register) {
+            if (db->entries[middle].uni_register < uni_register) {
                 start = middle + 1;
             }
             else {
@@ -109,7 +112,7 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
     pos = find(db, uni_register, db->sorted);
     //printf("pos -> %d, size -> %d", pos, db->size);
     if (pos < db->size) {
-        printf("\nA-NOK %lu, %d, %d\n", uni_register, db->students, db->size);
+        printf("\nA-NOK %lu, %d %d\n", uni_register, db->students, db->size);
         return 1;
     }
     ptr = MemoryCheck(db, 0, fluctuation);
@@ -138,10 +141,36 @@ void print (database *db) {
 
 void clear (database *db) {
 
-    db->entries = NULL;
+    //db->entries = NULL;
     free(db->entries);
     db->size = 0;
     db->students = 0;
+    printf("C-OK\n");
+}
+
+void sort (database *db) {
+    int i, j, comparisons = 0;
+    entry temp;
+
+    for (i = 1; i <= db->students; i++) {
+        for (j = i - 1; j >= 0; j--) {
+            comparisons++;
+            if(db->entries[j].uni_register < db->entries[j - 1].uni_register) {
+                temp.uni_register = db->entries[j - 1].uni_register;
+                strcpy(temp.name, db->entries[j - 1].name);
+                temp.fails = db->entries[j - 1].fails;
+                db->entries[j - 1].uni_register = db->entries[j].uni_register;
+                strcpy(db->entries[j - 1].name, db->entries[j].name);
+                db->entries[j - 1].fails = db->entries[j].fails;
+                db->entries[j].uni_register =  temp.uni_register;
+                strcpy(db->entries[j].name, temp.name);
+                db->entries[j].fails = temp.fails;
+            }
+        }
+    }
+    db->sorted = YES;
+    printf("S-OK\n");
+    fprintf(stderr, "\n%d\n", comparisons);
 }
 
 int main (int argc, char *argv[]) {
@@ -149,10 +178,9 @@ int main (int argc, char *argv[]) {
     char option, name[64];
     long unsigned int uni_register;
     short unsigned int fails;
-    int fluctuation;
+    int fluctuation, pos;
 
     db = (database *)malloc(sizeof(database));
-    db->entries = database_init(db, atoi(argv[1]));
     fluctuation = atoi(argv[2]);
 
     do {
@@ -160,6 +188,9 @@ int main (int argc, char *argv[]) {
         switch(option) {
             case 'a': {
                 scanf(" %lu %s %hu", &uni_register, name, &fails);
+                if (db->size == 0) {
+                    db->entries = database_init(db, atoi(argv[1]));
+                }
                 add(db, uni_register, name, fails, fluctuation);
                 break;
             }
@@ -172,10 +203,18 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 's': {
+                sort (db);
                 break;
             }
             case 'f': {
                 scanf(" %lu", &uni_register);
+                pos = find(db, uni_register, db->sorted);
+                if (pos < db->size) {
+                    printf("#\nF-OK %s %hu\n", db->entries[pos].name, db->entries[pos].fails);
+                }
+                else {
+                    printf("#\nF-NOK %lu\n", uni_register);
+                }
                 break;
             }
             case 'p': {
