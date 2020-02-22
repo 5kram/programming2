@@ -147,7 +147,7 @@ void clear (database *db) {
     db->students = 0;
     printf("C-OK\n");
 }
-
+// Insertion Sort
 void sort (database *db) {
     int i, j, comparisons = 0;
     entry temp;
@@ -173,6 +173,47 @@ void sort (database *db) {
     fprintf(stderr, "\n%d\n", comparisons);
 }
 
+int mod (database *db, long unsigned int uni_register, short unsigned int fails) {
+    int pos;
+
+    pos = find (db, uni_register, db->sorted);
+    if (pos == db->size) {
+        return 0;
+    }
+    else {
+        db->entries[pos].fails = fails;
+        return 1;
+    }
+
+}
+// Last Registration moves to Removed position
+// +No NULL in-between
+// -Unsorted
+int rmv(database *db, long unsigned int uni_register, int fluctuation) {
+    int pos;
+    entry *ptr;
+
+    pos = find (db, uni_register, db->sorted);
+    if (pos == db->size) {
+        printf("R-NOK %lu, %d %d\n", uni_register, db->students, db->size);
+    }
+    else {
+        db->entries[pos].uni_register = db->entries[db->students - 1].uni_register;
+        strcpy(db->entries[pos].name, db->entries[db->students -1].name);
+        db->entries[pos].fails = db->entries[db->students - 1].fails;
+        db->students--;
+        db->sorted = NO;
+        ptr = MemoryCheck(db, 1, fluctuation);
+        if (ptr == NULL) {
+            return 1;
+        }
+        db->entries = ptr;
+        printf("R-OK %lu, %d %d\n", uni_register, db->students, db->size);
+    }
+    
+    return 0;
+}
+
 int main (int argc, char *argv[]) {
     struct database *db;
     char option, name[64];
@@ -196,10 +237,18 @@ int main (int argc, char *argv[]) {
             }
             case 'r': {
                 scanf(" %lu", &uni_register);
+                pos = rmv (db, uni_register, fluctuation);
                 break;
             }
             case 'm': {
                 scanf(" %lu %hu", &uni_register, &fails);
+                pos = mod (db, uni_register, fails);
+                if (pos == db->size) {
+                    printf("M-NOK %lu\n", uni_register);
+                }
+                else {
+                    printf("M-OK %lu\n", uni_register);
+                }
                 break;
             }
             case 's': {
