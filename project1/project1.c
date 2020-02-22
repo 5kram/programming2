@@ -1,8 +1,10 @@
-// Dynamic Memory Database with students
-// and their number of  register and failed subjects
+// Dynamic Memory Handling 
+// Data Structure:
+// University Register, Name of Student, Number of Fails  
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #define YES 1
 #define NO 0
 
@@ -12,12 +14,12 @@ struct entry {
     short unsigned int fails;
 };
 typedef struct entry entry;
-// entry ptr, size of db, indicate if db is sorted, no of students
+
 struct database {
-    entry *entries;
-    int size;
-    int sorted;
-    int students;
+    entry *entries;     // Entry ptr
+    int size;           // Size of db
+    int sorted;         // Sorted or not
+    int students;       // No of students
 };
 typedef struct database database;
 
@@ -32,41 +34,80 @@ entry *database_init (database *db, int db_size) {
     
     return ptr;
 }
-
-int find (struct database *db, int uni_register) {
-    int i;
-    // If found -> position
-    // If not -> size of db
-    for (i = 0; i < db->size; i++) {
-        if (db->entries[i].uni_register == uni_register) {
-            return i;
+// If sorted -> binary search
+// If not -> linear search
+// If found returns position
+// If not returns the size of db
+int find (struct database *db, int uni_register, int sorted) {
+    int i, start, middle, end, comparisons = 0;
+    // Sorted -> Binary Search
+    if (sorted == YES) {
+        start = 0;
+        end = db->students - 1; 
+        do {
+            middle = (end + start) / 2;
+            comparisons++;
+            if (db->entries[middle].uni_register == uni_register) {
+                fprintf(stderr, "\n%d\n", comparisons);
+                return middle;
+            }
+            comparisons++;
+            if (db->entries[middle].uni_register > uni_register) {
+                start = middle + 1;
+            }
+            else {
+                end = middle - 1;
+            }
         }
+        while (start <= end);
+        fprintf(stderr, "\n%d\n", comparisons);
+        return db->size;
     }
-
-    return db->size;
+    // Unsorted -> Linear Search
+    else {
+        for (i = 0; i < db->students; i++) {
+            if (db->entries[i].uni_register == uni_register) {
+                return i;
+            }
+        }
+        return db->size;
+    }
+    
 }
 // Memory Handling
 // Option = 0 -> Called by add function(add memory)
 // Option = 1 -> Called by rmv function(rmv memory)
 entry *MemoryCheck (struct database *db, int option, int fluctuation) {
     entry *ptr;
-    // Remove Condition || Add Condition
-    if (db->size - db->students == fluctuation || db->size - db->students == 0) {
+
+    ptr = db->entries;
+    // Remove Condition
+    if (db->size - db->students == fluctuation && option == 1) {
         // Remove -> Downsize Memory
-        if (option == 1) {
-            fluctuation = - fluctuation;
-        }
+        fluctuation = - fluctuation;
         ptr = (entry *)realloc(db->entries, (db->size + fluctuation) * sizeof(entry));
+        db->size = db->size + fluctuation;
+        return ptr;
+    }
+    // Add Condition
+    else if (db->size - db->students == 0 && option == 0) {
+        ptr = (entry *)realloc(db->entries, (db->size + fluctuation) * sizeof(entry));
+        db->size = db->size + fluctuation;
+        return ptr;
     }
     
     return ptr;
 }
 
 int add (struct database *db, long unsigned int uni_register, char name[64], short unsigned int fails, int fluctuation) {
-    int pos = 0;
+    int pos = 0, i;
     entry *ptr;
     
-    pos = find(db, uni_register);
+    for (i = 0; i < strlen(name); i++) {
+        name[i] = toupper(name[i]);
+    }
+    pos = find(db, uni_register, db->sorted);
+    //printf("pos -> %d, size -> %d", pos, db->size);
     if (pos < db->size) {
         printf("\nA-NOK %lu, %d, %d\n", uni_register, db->students, db->size);
         return 1;
@@ -86,6 +127,23 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
     return 0;
 }
 
+void print (database *db) {
+    int i;
+
+    printf("\n#\n");
+    for (i = 0; i < db->students; i++) {
+        printf("%ld %s %hu\n", db->entries[i].uni_register, db->entries[i].name, db->entries[i].fails);
+    }
+}
+
+void clear (database *db) {
+
+    db->entries = NULL;
+    free(db->entries);
+    db->size = 0;
+    db->students = 0;
+}
+
 int main (int argc, char *argv[]) {
     struct database *db;
     char option, name[64];
@@ -94,7 +152,6 @@ int main (int argc, char *argv[]) {
     int fluctuation;
 
     db = (database *)malloc(sizeof(database));
-    //db->size = atoi(argv[1]);
     db->entries = database_init(db, atoi(argv[1]));
     fluctuation = atoi(argv[2]);
 
@@ -108,32 +165,29 @@ int main (int argc, char *argv[]) {
             }
             case 'r': {
                 scanf(" %lu", &uni_register);
-
                 break;
             }
             case 'm': {
                 scanf(" %lu %hu", &uni_register, &fails);
-
                 break;
             }
             case 's': {
-
                 break;
             }
             case 'f': {
                 scanf(" %lu", &uni_register);
-
                 break;
             }
             case 'p': {
-                
+                print (db);
                 break;
             }
             case 'c': {
-
+                clear (db);
                 break;
             }
             case 'q': {
+                clear (db);
                 return 0;
             }
             default : {
