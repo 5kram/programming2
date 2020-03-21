@@ -14,59 +14,61 @@ typedef struct simplist simplist;
 void simplinit (struct simplist **head) {
     *head = NULL;
 }
-// If option = 1 -> find || rmv
+// If option = 1 -> find
 // If option = 0 -> add
+// If option = -1 -> rmv
 // Returns curr
 
 simplist *simplist_find (struct simplist *head, unsigned short classID, char option) {
     struct simplist *curr, *prev;
     
     for (curr = head, prev = head; curr != NULL; curr = curr->nxt) {
-        if (option) {
-            if (curr->classID == classID) {
+        if (curr->classID == classID) {
+            if (option == 1 || option == 0) {
                 return curr;
             }
+            else {
+                return prev;
+            }
         }
-        else {
-           if (curr->classID == classID) {
-               return -1;
-           }
-           if (curr->classID > classID) {
-               printf("prev -> %d\n", prev->classID);
-               return prev;
-           }
+        if (curr->classID > classID) {
+            if (option == 0) {
+                return prev;
+            }
         }
         prev = curr;
     }
-    printf("Telos\n");
-    if (option) {
-        return NULL;
+
+    if (option == 0) {
+        return prev;
     }
     else {
-        //printf("returned curr->classID: %d\n", curr->classID);
-        return prev;
+        return NULL;
     }
 }
 
 int simplist_add (struct simplist **head, unsigned short classID) {
     struct simplist *curr, *prev;
-    
+    // Empty list
     if (*head == NULL) {
-        printf("UNIHEAD -> %d\n", classID);
+        //printf("UNIHEAD -> %d\n", classID);
         curr = (struct simplist *)malloc(sizeof(struct simplist));
         curr->classID = classID;
         curr->nxt = *head;
         *head = curr;
         return 0;
     }
-    // ClassID already exists
+    // Returns the prev pointer
+    // prev->classID < classID < nxt->classID
     prev = simplist_find (*head, classID, 0);
-    if (prev == -1) {
+    // ClassID already exists
+    if (prev->classID == classID) {
         printf("Already exists\n");
         return 1;
     }
+    // First in the list
     if (prev == *head && classID < prev->classID) {
-        printf("HEAD -> %d\n", classID);
+        //printf("HEAD -> %d\n", classID);
         curr = (struct simplist *)malloc(sizeof(struct simplist));
         curr->classID = classID;
         curr->nxt = *head;
@@ -78,12 +80,35 @@ int simplist_add (struct simplist **head, unsigned short classID) {
         curr->nxt = prev->nxt;
         prev->nxt = curr;   
     }
-    /*
-    curr = (struct simplist *)malloc(sizeof(struct simplist));
-    curr->classID = classID;
-    curr->nxt = *head;
-    *head = curr;
-    */
+    
+    return 0;
+}
+
+int simplist_rmv (struct simplist **head, unsigned short classID) {
+    struct simplist *prev, *curr;
+
+    prev = simplist_find (*head, classID, -1);
+    
+        if (prev == *head && prev->classID == classID) {
+            curr = prev;
+            //printf("HEAD-> %d\n",prev->nxt->classID);
+
+            *head = prev->nxt;
+            
+            free(curr);
+            return 1;
+        }
+        else if (prev != NULL) {
+            //printf("prev-> %d prev->nxt-> %d prev->nxt->nxt-> %d\n", prev->classID, prev->nxt->classID, prev->nxt->nxt->classID); 
+            curr = prev->nxt;
+            prev->nxt = prev->nxt->nxt;
+            free (curr);
+        }
+        
+    
+
+
+
     return 0;
 }
 
@@ -132,6 +157,12 @@ int main (int argc, char *argv[]) {
                 else {
                     printf("FOUND\n");
                 }
+                break;
+            }
+            case 'r': {
+                printf("Enter ClassID: ");
+                scanf(" %d", &classID);
+                check = simplist_rmv (&head, classID);
                 break;
             }
             case 'q': {
