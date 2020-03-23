@@ -8,11 +8,18 @@
 #define YES 1
 #define NO 0
 
+struct simplist {
+    unsigned short classID;
+    struct simplist *nxt;
+};
+typedef struct simplist simplist;
+
 struct entry {
     long unsigned int uni_register;
     char name[64];
     short unsigned int fails;
     int classes;
+    struct simplist *head;
 };
 typedef struct entry entry;
 
@@ -36,73 +43,122 @@ entry **database_init (database *db, int db_size) {
     return ptr;
 }
 
-struct simplist {
-    unsigned short classID;
-    struct simplist *nxt;
-};
-typedef struct simplist simplist;
-
-void simplinit (struct simplist **head) {
+void slinit (struct simplist **head) {
     *head = NULL;
 }
-// If option = 1 -> find || rmv
+// If option = 1 -> find
 // If option = 0 -> add
+// If option = -1 -> rmv
 // Returns curr
 
-simplist *simplist_find (struct simplist *head, unsigned short classID, char option) {
-    struct simplist *curr;
-
-    for (curr = head; curr != NULL; curr = curr->nxt) {
-        if (option) {
-            if (curr->classID == classID) {
+simplist *slist_find (struct simplist *head, unsigned short classID, char option) {
+    struct simplist *curr, *prev;
+    
+    for (curr = head, prev = head; curr != NULL; curr = curr->nxt) {
+        if (curr->classID == classID) {
+            if (option == 1 || option == 0) {
                 return curr;
-            }
-        }
-        else {
-            if (curr->classID >= classID) {
-                if (curr->nxt->classID == classID) {
-                    return NULL;
-                }
             }
             else {
-                return curr;
+                return prev;
             }
         }
-
+        if (curr->classID > classID) {
+            if (option == 0) {
+                return prev;
+            }
+        }
+        prev = curr;
     }
 
-    return curr;
+    if (option == 0) {
+        return prev;
+    }
+    else {
+        return NULL;
+    }
 }
 
-int simplist_add (struct simplist **head, unsigned short classID) {
-    struct simplist *prev, *curr;
-    // ClassID already exists
-    prev = simplist_find (*head, classID - 1, 0);
-    if (prev == NULL) {
+int slist_add (struct simplist **head, unsigned short classID) {
+    struct simplist *curr, *prev;
+    // Empty list
+    if (*head == NULL) {
+        //printf("UNIHEAD -> %d\n", classID);
+        curr = (struct simplist *)malloc(sizeof(struct simplist));
+        curr->classID = classID;
+        curr->nxt = *head;
+        *head = curr;
         return 0;
+    }
+    // Returns the prev pointer
+    // prev->classID < classID < nxt->classID
+    prev = slist_find (*head, classID, 0);
+    // ClassID already exists
+    if (prev->classID == classID) {
+        return 1;
+    }
+    // First in the list
+    if (prev == *head && classID < prev->classID) {
+        //printf("HEAD -> %d\n", classID);
+        curr = (struct simplist *)malloc(sizeof(struct simplist));
+        curr->classID = classID;
+        curr->nxt = *head;
+        *head = curr;
     }
     else {
         curr = (struct simplist *)malloc(sizeof(struct simplist));
         curr->classID = classID;
-         if (prev == *head) {
-            curr->nxt = *head;
-            *head = curr;
-         }
-         else {
-             curr->nxt = prev->nxt;
-             prev->nxt = curr;
-         }    
+        curr->nxt = prev->nxt;
+        prev->nxt = curr;   
     }
+    
+    return 0;
+}
+
+int slist_rmv (struct simplist **head, unsigned short classID) {
+    struct simplist *prev, *curr;
+
+    prev = slist_find (*head, classID, -1);
+    
+        if (prev == *head && prev->classID == classID) {
+            curr = prev;
+            //printf("HEAD-> %d\n",prev->nxt->classID);
+            *head = prev->nxt;
+            free(curr);
+            return 1;
+        }
+        else if (prev != NULL) {
+            //printf("prev-> %d prev->nxt-> %d prev->nxt->nxt-> %d\n", prev->classID, prev->nxt->classID, prev->nxt->nxt->classID); 
+            curr = prev->nxt;
+            prev->nxt = prev->nxt->nxt;
+            free (curr);
+            return 1;
+        }
 
     return 0;
 }
 
-void print_list (struct simplist *head) {
+void slist_print (struct simplist *head) {
     simplist *curr;
 
-    for (curr = head; curr != NULL; curr = curr->nxt) {
-        printf("%hu\n", curr->classID);
+    curr = head;
+    while (curr != NULL) {
+        printf(" -> %d", curr->classID);
+        curr = curr->nxt;
     }
+    printf("\n");
+}
+
+void slist_clear (struct simplist **head) {
+    simplist *curr, *prev;
+
+    curr = *head; 
+    while (curr != NULL) {
+        prev = curr;
+        curr = prev->nxt;
+        free(prev);
+    }
+    *head = NULL;
 }
 
 // If sorted -> binary search
@@ -110,7 +166,7 @@ void print_list (struct simplist *head) {
 // If found returns position
 // If not returns the size of db
 // If called from main -> counts the comparisons
-int find (struct database *db, int uni_register, int sorted, int main_find) {
+int find (struct database *db, long unsigned int uni_register, int sorted, int main_find) {
     int i, start, middle, end, comparisons = 0;
     // Sorted -> Binary Search
     if (sorted == YES) {
@@ -157,6 +213,72 @@ int find (struct database *db, int uni_register, int sorted, int main_find) {
         return db->size;
     }
 }
+
+int reg (struct database *db, long unsigned int uni_register, unsigned short classID) {
+    int pos, check;
+
+    pos = find (db, uni_register, db->sorted, 0);
+    if (pos == db->size) {
+        return -1;
+    }
+    else {
+        // Head Init
+        if (!db->entries[pos]->classes) {
+            db->entries[pos]->head = NULL;
+        }
+        check = slist_add (&(db->entries[pos]->head), classID);
+        if (check) {
+            return 0;
+        }
+        db->entries[pos]->classes++;
+    }
+    
+    return 1;
+}
+
+int unreg (struct database *db, long unsigned int uni_register, unsigned short classID) {
+    int pos, check;
+
+    pos = find (db, uni_register, db->sorted, 0);
+    if (pos == db->size) {
+        return -1;
+    }
+    else {
+        check = slist_rmv (&(db->entries[pos]->head), classID);
+        if (check) {
+            printf("\nU-OK %lu %hu\n", uni_register, classID);
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    //return 0;
+}
+
+int isreg (struct database *db, long unsigned int uni_register, unsigned short classID) {
+    struct simplist *curr;
+    int pos;
+
+    pos = find (db, uni_register, db->sorted, 0);
+    if (pos == db->size) {
+        printf("\nI-NOK %lu\n", uni_register);
+        return -1;
+    }
+    else {
+        // **********CHECK POINTER***********
+        curr = slist_find ((db->entries[pos]->head), classID, 1);
+        if (curr != NULL) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+}
+
 // Memory Handling
 // Option = 0 -> Called by add function(add memory)
 // Option = 1 -> Called by rmv function(rmv memory)
@@ -206,10 +328,12 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
     entry_ptr->uni_register = uni_register;
     strcpy(entry_ptr->name, name);
     entry_ptr->fails = fails;
+    entry_ptr->classes = 0;
     
     db->entries[db->students] = entry_ptr;
     db->students++;
     db->sorted = NO;
+
     printf("\nA-OK %lu, %d %d\n", uni_register, db->students, db->size);
 
     return 0;
@@ -221,12 +345,18 @@ int print (database *db) {
     printf("\n#\n");
     for (i = 0; i < db->students; i++) {
         printf("%ld %s %hu\n", db->entries[i]->uni_register, db->entries[i]->name, db->entries[i]->fails);
+        slist_print (db->entries[i]->head);
     }
+    
     return 1;
 }
 
 void clear (database *db) {
-
+    int i;
+    
+    for (i = 0; i < db->students; i++) {
+        slist_clear (&(db->entries[i]->head));
+    }
     free(db->entries);
     db->size = 0;
     db->students = 0;
@@ -284,7 +414,7 @@ int mod (database *db, long unsigned int uni_register, short unsigned int fails)
 // Last Registration moves to Removed position
 // + No NULL in-between
 // - Unsorted
-int rmv(database *db, long unsigned int uni_register, int fluctuation) {
+int rmv (database *db, long unsigned int uni_register, int fluctuation) {
     int pos;
     entry **ptr;
 
@@ -293,6 +423,7 @@ int rmv(database *db, long unsigned int uni_register, int fluctuation) {
         printf("\nR-NOK %lu, %d %d\n", uni_register, db->students, db->size);
     }
     else {
+        slist_clear (&(db->entries[pos]->head));
         db->entries[pos]->name[0] = '\0';
         db->entries[pos]->uni_register = db->entries[db->students - 1]->uni_register;
         strcpy(db->entries[pos]->name, db->entries[db->students -1]->name);
@@ -318,6 +449,7 @@ int main (int argc, char *argv[]) {
     long unsigned int uni_register;
     short unsigned int fails;
     int fluctuation, pos;
+    unsigned short classID;
 
     db = (database *)malloc(sizeof(database));
     fluctuation = atoi(argv[2]);
@@ -329,6 +461,20 @@ int main (int argc, char *argv[]) {
             case 'a': {
                 scanf(" %lu %s %hu", &uni_register, name, &fails);
                 add(db, uni_register, name, fails, fluctuation);
+                break;
+            }
+            case 'g': {
+                scanf(" %lu %hu", &uni_register, &classID);
+                pos = reg (db, uni_register, classID);
+                if (pos == -1) {
+                    printf("\nG-NOK %lu\n", uni_register);
+                }
+                else if (pos) {
+                    printf("\nG_OK %lu %hu\n", uni_register, classID);
+                }
+                else {
+                    printf("\nG-NOK %hu\n", classID);
+                }
                 break;
             }
             case 'r': {
@@ -359,6 +505,28 @@ int main (int argc, char *argv[]) {
                 }
                 else {
                     printf("\nF-NOK %lu\n", uni_register);
+                }
+                break;
+            }
+            case 'i': {
+                scanf(" %lu %hu", &uni_register, &classID);
+                pos = isreg (db, uni_register, classID);
+                if (pos == 1) {
+                    printf("\nYES\n");
+                }
+                else if (pos == 0) {
+                    printf("\nNO\n");
+                }
+                break;
+            }
+            case 'u': {
+                scanf(" %lu %hu", &uni_register, &classID);
+                pos = unreg (db, uni_register, classID);
+                if (pos == -1) {
+                    printf("\nU-NOK %lu\n", uni_register);
+                }
+                else if (pos == 0){
+                    printf("\nU-NOK %hu\n", classID);
                 }
                 break;
             }
