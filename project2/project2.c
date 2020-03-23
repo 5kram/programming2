@@ -143,7 +143,7 @@ void slist_print (struct simplist *head) {
 
     curr = head;
     while (curr != NULL) {
-        printf(" -> %d", curr->classID);
+        printf("\n%d", curr->classID);
         curr = curr->nxt;
     }
     printf("\n");
@@ -267,7 +267,6 @@ int isreg (struct database *db, long unsigned int uni_register, unsigned short c
         return -1;
     }
     else {
-        // **********CHECK POINTER***********
         curr = slist_find ((db->entries[pos]->head), classID, 1);
         if (curr != NULL) {
             return 1;
@@ -276,7 +275,20 @@ int isreg (struct database *db, long unsigned int uni_register, unsigned short c
             return 0;
         }
     }
+}
 
+int list_courses (struct database *db, long unsigned int uni_register) {
+    int pos;
+
+    pos = find (db, uni_register, db->sorted, 0);
+    if (pos == db->size) {
+        return 0;
+    }
+    else {
+        printf("\nL-OK %s\n", db->entries[pos]->name);
+        slist_print (db->entries[pos]->head);
+        return 1;
+    }
 }
 
 // Memory Handling
@@ -527,6 +539,14 @@ int main (int argc, char *argv[]) {
                 }
                 else if (pos == 0){
                     printf("\nU-NOK %hu\n", classID);
+                }
+                break;
+            }
+            case 'l': {
+                scanf(" %lu", &uni_register);
+                pos = list_courses (db, uni_register);
+                if (!pos) {
+                    printf("\nL-NOK %lu\n", uni_register);
                 }
                 break;
             }
