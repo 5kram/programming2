@@ -20,6 +20,8 @@ struct entry {
     short unsigned int fails;
     int classes;
     struct simplist *head;
+    struct entry *nxt;
+    struct entry *prv;
 };
 typedef struct entry entry;
 
@@ -30,6 +32,14 @@ struct database {
     int students;       // No of students
 };
 typedef struct database database;
+
+struct doublist {
+    entry **head;
+    int size;
+    int largest_bucket;
+    int list_size[];
+};
+typedef struct doublist doublist;
 
 entry **database_init (database *db, int db_size) {
     entry **ptr;
@@ -46,11 +56,80 @@ entry **database_init (database *db, int db_size) {
 void slinit (struct simplist **head) {
     *head = NULL;
 }
+
+entry **doublist_init (doublist *dl, int size) {
+    entry *sentinel;
+    int i;
+
+    dl->head = (entry **)realloc(dl->head, size * sizeof(entry*));
+
+    for (i = 0; i < size; i++) {
+        sentinel = (entry *)malloc(sizeof(entry));
+        strcpy(sentinel->name, "-1");
+        sentinel->nxt = sentinel;
+        sentinel->prv = sentinel;
+        dl->head[i] = sentinel;
+        dl->list_size[i] = 0;
+    }
+    dl->largest_bucket = 0;
+    dl->size = size;
+    return dl->head;
+}
+// Find -> option = 0
+// Add -> option = 1
+entry *find_by_name (doublist *dl, char name[], int option, long unsigned int uni_register, int index) {
+    entry *curr;
+    // ************************************ LOIPON,  ALLAZO TO HEAD, PSAXNO SE ENA LIST SIGKEKRIMENO************************************* //
+    printf("mesa sti find_by_name index-> %d name-> %s\n", index, name);
+    curr = dl->head[index];
+    strcpy(curr->name, name);
+
+    for (curr = dl->head[index]->nxt; ; curr = curr->nxt) {
+        if (!strcmp(curr->name, name) && !option) {
+            return curr;
+        }
+        else if (strcmp(curr->name, name) > 0 && option) {
+            return curr->prv;
+        }
+        else if (!(strcmp(curr->name, name) && option)) {
+            printf("hi\n");
+            return curr;
+        }
+    }
+
+    return NULL;
+}
+
+void doublist_print (doublist *dl) {
+    entry *curr;
+    int i, j;
+
+    for (i = 0; i < dl->size; i++) {
+        printf("\n%d, %d\n", i, dl->list_size[i]);
+        
+        for (j = 0, curr = dl->head[i]->nxt; j < dl->list_size[i]; curr = curr->nxt, j++) {
+            printf(" [%lu %s %hu]", curr->uni_register, curr->name, curr->fails);
+        }
+    }
+    printf("\n");
+}
+
+unsigned long hash (char *str, int size) {
+    unsigned long hash = 5381;
+    int c;
+
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+
+    return (hash % size);
+}
+
+
 // If option = 1 -> find
 // If option = 0 -> add
 // If option = -1 -> rmv
 // Returns curr
-
 simplist *slist_find (struct simplist *head, unsigned short classID, char option) {
     struct simplist *curr, *prev;
     
@@ -143,10 +222,10 @@ void slist_print (struct simplist *head) {
 
     curr = head;
     while (curr != NULL) {
-        printf("\n%d", curr->classID);
+        printf("%d\n", curr->classID);
         curr = curr->nxt;
     }
-    printf("\n");
+
 }
 
 void slist_clear (struct simplist **head) {
@@ -244,9 +323,14 @@ int unreg (struct database *db, long unsigned int uni_register, unsigned short c
         return -1;
     }
     else {
+        // Empty list
+        if (!db->entries[pos]->classes) {
+            return 0;
+        }
         check = slist_rmv (&(db->entries[pos]->head), classID);
         if (check) {
             printf("\nU-OK %lu %hu\n", uni_register, classID);
+            db->entries[pos]->classes--;
             return 1;
         }
         else {
@@ -316,10 +400,12 @@ entry **MemoryCheck (struct database *db, int option, int fluctuation) {
     return ptr;
 }
 
-int add (struct database *db, long unsigned int uni_register, char name[64], short unsigned int fails, int fluctuation) {
+int add (struct database *db, long unsigned int uni_register, char name[64], short unsigned int fails, int fluctuation, doublist *dl) {
     int pos = 0, i;
     entry **ptr;
     entry *entry_ptr;
+    long unsigned index;
+    entry *curr;
     
     for (i = 0; i < strlen(name); i++) {
         name[i] = toupper(name[i]);
@@ -345,21 +431,39 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
     db->entries[db->students] = entry_ptr;
     db->students++;
     db->sorted = NO;
-
+    index = hash(name, dl->size);
+    //printf("prin tin find_by_name\n");
+    curr = find_by_name(dl, name, 1, uni_register, index);
+    if (!strcmp(curr->name, name)) {
+       // printf("same\n");
+        curr->nxt = db->entries[db->students - 1];
+        curr = curr->nxt;
+        curr->nxt = dl->head[index]->nxt;
+        curr->prv = dl->head[index];
+        curr->nxt->prv = curr;
+        curr->prv->nxt = curr;
+        dl->list_size[index]++;
+    }
+    
+    
     printf("\nA-OK %lu, %d %d\n", uni_register, db->students, db->size);
 
     return 0;
 }
 
-int print (database *db) {
+int print (database *db, doublist *dl) {
     int i;
-
     printf("\n#\n");
+    
     for (i = 0; i < db->students; i++) {
         printf("%ld %s %hu\n", db->entries[i]->uni_register, db->entries[i]->name, db->entries[i]->fails);
-        slist_print (db->entries[i]->head);
+        //slist_print (db->entries[i]->head);
     }
     
+    printf("%d %d %.2lf %d", dl->size, db->students, (double)(db->students / dl->size), dl->largest_bucket);
+    doublist_print(dl);
+
+
     return 1;
 }
 
@@ -367,9 +471,10 @@ void clear (database *db) {
     int i;
     
     for (i = 0; i < db->students; i++) {
+        db->entries[i]->classes = 0;
         slist_clear (&(db->entries[i]->head));
     }
-    free(db->entries);
+    //free (db->entries);
     db->size = 0;
     db->students = 0;
     db->entries = NULL;
@@ -462,17 +567,22 @@ int main (int argc, char *argv[]) {
     short unsigned int fails;
     int fluctuation, pos;
     unsigned short classID;
+    doublist *dl;
+    //unsigned long index;
 
     db = (database *)malloc(sizeof(database));
+    dl = (doublist *)malloc(sizeof(doublist));
     fluctuation = atoi(argv[2]);
     db->entries = database_init(db, atoi(argv[1]));
+    dl->head = doublist_init(dl, atoi(argv[3]));
 
     do {
         scanf (" %c", &option);
         switch(option) {
             case 'a': {
                 scanf(" %lu %s %hu", &uni_register, name, &fails);
-                add(db, uni_register, name, fails, fluctuation);
+                //index = hash(name);
+                add(db, uni_register, name, fails, fluctuation, dl);
                 break;
             }
             case 'g': {
@@ -482,7 +592,7 @@ int main (int argc, char *argv[]) {
                     printf("\nG-NOK %lu\n", uni_register);
                 }
                 else if (pos) {
-                    printf("\nG_OK %lu %hu\n", uni_register, classID);
+                    printf("\nG-OK %lu %hu\n", uni_register, classID);
                 }
                 else {
                     printf("\nG-NOK %hu\n", classID);
@@ -551,7 +661,7 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'p': {
-                pos = print (db);
+                pos = print (db, dl);
                 break;
             }
             case 'c': {
