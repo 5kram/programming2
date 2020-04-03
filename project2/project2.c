@@ -76,29 +76,60 @@ entry **doublist_init (doublist *dl, int size) {
     dl->size = size;
     return dl->head;
 }
-// Find -> option = 0
-// Add -> option = 1
-entry *find_by_name (doublist *dl, char name[], int option, long unsigned int uni_register, int index) {
-    entry *curr;
-    // ************************************ LOIPON,  ALLAZO TO HEAD, PSAXNO SE ENA LIST SIGKEKRIMENO************************************* //
-    printf("index-> %d name-> %s\n", index, name);
-    curr = dl->head[index];
-    strcpy(curr->name, name);
 
-    for (curr = dl->head[index]->nxt; ; curr = curr->nxt) {
-        if (!strcmp(curr->name, name) && !option) {
-            return curr;
-        }
-        else if (strcmp(curr->name, name) > 0 && option) {
-            return curr->prv;
-        }
-        else if (!(strcmp(curr->name, name) && option)) {
-            printf("hi\n");
-            return curr;
-        }
+unsigned long hash (char *str, int size) {
+    unsigned long hash = 5381;
+    int c;
+
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
     }
 
-    return NULL;
+    return (hash % size);
+}
+// Find, Rmv -> option = 0
+// Add -> option = 1
+entry *doublist_find (doublist *dl, char name[], int option, int index) {
+    entry *curr;
+    int i;
+    // ************************************ LOIPON,  ALLAZO TO HEAD, PSAXNO SE ENA LIST SIGKEKRIMENO************************************* //
+    printf("index-> %d name-> %s\n", index, name);
+    strcpy(dl->head[index]->name, name);
+
+    for (curr = dl->head[index]->nxt, i = 0; strcmp(curr->name, name); curr = curr->nxt, i++) ;
+    
+    if (curr == dl->head[index]) {
+        printf("i->%d\n", i);
+        return NULL;
+    }
+    else {
+        printf("eurika\n");
+        return curr;  
+    }  
+
+}
+void find_by_name (doublist *dl, char name[], int size) {
+    entry *curr;
+    int index, i;
+
+
+    for (i = 0; i < strlen(name); i++) {
+        name[i] = toupper(name[i]);
+    }
+    index = hash(name, size);
+    curr = doublist_find (dl, name, 0, index);
+    if (curr != NULL) {
+        printf("\nN-OK %s\n", curr->name);
+        do {
+            printf("%lu %hu\n", curr->uni_register, curr->fails);
+            curr = curr->nxt;
+        }
+        while (strcmp(curr->nxt->name, name) && curr != dl->head[index]);
+    }
+    else {
+        printf("\nN-NOK %s\n", name);
+    }
+
 }
 
 void doublist_print (doublist *dl) {
@@ -130,18 +161,6 @@ void doublist_print (doublist *dl) {
     }
     printf("\n");
 }
-
-unsigned long hash (char *str, int size) {
-    unsigned long hash = 5381;
-    int c;
-
-    while ((c = *str++)) {
-        hash = ((hash << 5) + hash) + c;
-    }
-
-    return (hash % size);
-}
-
 
 // If option = 1 -> find
 // If option = 0 -> add
@@ -613,6 +632,11 @@ int main (int argc, char *argv[]) {
                 else {
                     printf("\nG-NOK %hu\n", classID);
                 }
+                break;
+            }
+            case 'n': {
+                scanf(" %s", name);
+                find_by_name (dl, name, atoi(argv[3]));
                 break;
             }
             case 'r': {
