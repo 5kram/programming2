@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#define MAX_SIZE 250001
 #define YES 1
 #define NO 0
 
@@ -37,7 +38,7 @@ struct doublist {
     entry **head;
     int size;
     int largest_bucket;
-    int list_size[];
+    int list_size[MAX_SIZE];
 };
 typedef struct doublist doublist;
 
@@ -80,7 +81,7 @@ entry **doublist_init (doublist *dl, int size) {
 entry *find_by_name (doublist *dl, char name[], int option, long unsigned int uni_register, int index) {
     entry *curr;
     // ************************************ LOIPON,  ALLAZO TO HEAD, PSAXNO SE ENA LIST SIGKEKRIMENO************************************* //
-    printf("mesa sti find_by_name index-> %d name-> %s\n", index, name);
+    printf("index-> %d name-> %s\n", index, name);
     curr = dl->head[index];
     strcpy(curr->name, name);
 
@@ -108,8 +109,24 @@ void doublist_print (doublist *dl) {
         printf("\n%d, %d\n", i, dl->list_size[i]);
         
         for (j = 0, curr = dl->head[i]->nxt; j < dl->list_size[i]; curr = curr->nxt, j++) {
+            if (!strcmp(curr->name, "-1")) {
+                break;
+            }
             printf(" [%lu %s %hu]", curr->uni_register, curr->name, curr->fails);
         }
+        
+       // Another way
+       /*
+        curr = dl->head[i]->nxt;
+        j = 0;
+        do {
+            curr = curr->nxt;
+            printf(" [%lu %s %hu]", curr->uni_register, curr->name, curr->fails);
+            
+            j++;
+        }
+        while (!strcmp(curr->name, "-1"));
+        */
     }
     printf("\n");
 }
@@ -157,6 +174,7 @@ simplist *slist_find (struct simplist *head, unsigned short classID, char option
         return NULL;
     }
 }
+
 
 int slist_add (struct simplist **head, unsigned short classID) {
     struct simplist *curr, *prev;
@@ -433,17 +451,15 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
     db->sorted = NO;
     index = hash(name, dl->size);
     //printf("prin tin find_by_name\n");
-    curr = find_by_name(dl, name, 1, uni_register, index);
-    if (!strcmp(curr->name, name)) {
-       // printf("same\n");
-        curr->nxt = db->entries[db->students - 1];
-        curr = curr->nxt;
-        curr->nxt = dl->head[index]->nxt;
-        curr->prv = dl->head[index];
-        curr->nxt->prv = curr;
-        curr->prv->nxt = curr;
-        dl->list_size[index]++;
-    }
+   // curr = find_by_name(dl, name, 1, uni_register, index);
+   
+    curr = db->entries[db->students - 1];
+    curr->nxt = dl->head[index]->nxt;
+    curr->prv = dl->head[index];
+    curr->nxt->prv = curr;
+    curr->prv->nxt = curr;
+    dl->list_size[index]++;
+    printf("curr->name: %s curr->prv->name: %s\n", curr->name, curr->prv->name);
     
     
     printf("\nA-OK %lu, %d %d\n", uni_register, db->students, db->size);
