@@ -92,20 +92,24 @@ unsigned long hash (char *str, int size) {
 entry *doublist_find (doublist *dl, char name[], int option, int index) {
     entry *curr;
     int i;
-    // ************************************ LOIPON,  ALLAZO TO HEAD, PSAXNO SE ENA LIST SIGKEKRIMENO************************************* //
+
     printf("index-> %d name-> %s\n", index, name);
     strcpy(dl->head[index]->name, name);
+    if (option == 0) {
+        for (curr = dl->head[index]->nxt, i = 0; strcmp(curr->name, name); curr = curr->nxt, i++) ;
 
-    for (curr = dl->head[index]->nxt, i = 0; strcmp(curr->name, name); curr = curr->nxt, i++) ;
-    
-    if (curr == dl->head[index]) {
-        printf("i->%d\n", i);
-        return NULL;
+        if (curr == dl->head[index]) {
+            return NULL;
+        }
+        else {
+            return curr;  
+        }
     }
     else {
-        printf("eurika\n");
-        return curr;  
-    }  
+        for (curr = dl->head[index]->nxt, i = 0; !(strcmp(curr->name, name) >= 0); curr = curr->nxt, i++) ;
+
+        return curr;
+    }
 
 }
 void find_by_name (doublist *dl, char name[], int size) {
@@ -130,6 +134,31 @@ void find_by_name (doublist *dl, char name[], int size) {
         printf("\nN-NOK %s\n", name);
     }
 
+}
+
+entry *doublist_add (doublist *dl, char name[], long unsigned int uni_register, short unsigned int fails) {
+    entry *curr, *prev_new, *new;
+    int index;
+    // Returns the next node
+    new = (entry *)malloc(sizeof(entry));
+    new->uni_register = uni_register;
+    strcpy(new->name, name);
+    new->fails = fails;
+    new->classes = 0;
+    
+    
+    index = hash(name, dl->size);
+    curr = doublist_find (dl, new->name, 1, index);
+    prev_new = curr->prv;
+    //printf("curr returned ->%s", curr->name);
+    
+    new->nxt = curr;
+    new->prv = prev_new;
+    curr->prv = new;
+    prev_new->nxt = new;
+
+    dl->list_size[index]++;
+    return new;
 }
 
 void doublist_print (doublist *dl) {
@@ -441,8 +470,7 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
     int pos = 0, i;
     entry **ptr;
     entry *entry_ptr;
-    long unsigned index;
-    entry *curr;
+    
     
     for (i = 0; i < strlen(name); i++) {
         name[i] = toupper(name[i]);
@@ -459,6 +487,7 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
 
     db->entries = ptr;
     // Dynamically Allocate Memory for a specific entry
+    /*
     entry_ptr = (entry *)malloc(sizeof(entry));
     entry_ptr->uni_register = uni_register;
     strcpy(entry_ptr->name, name);
@@ -469,16 +498,23 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
     db->students++;
     db->sorted = NO;
     index = hash(name, dl->size);
+    */
     //printf("prin tin find_by_name\n");
    // curr = find_by_name(dl, name, 1, uni_register, index);
-   
-    curr = db->entries[db->students - 1];
+    
+    //curr = db->entries[db->students - 1];
+    entry_ptr = doublist_add (dl, name, uni_register, fails);
+    db->entries[db->students] = entry_ptr;
+    db->students++;
+    db->sorted = NO;
+    /*
     curr->nxt = dl->head[index]->nxt;
     curr->prv = dl->head[index];
     curr->nxt->prv = curr;
     curr->prv->nxt = curr;
-    dl->list_size[index]++;
-    printf("curr->name: %s curr->prv->name: %s\n", curr->name, curr->prv->name);
+    */
+    
+    //printf("curr->name: %s curr->prv->name: %s\n", entry_ptr->name, entry_ptr->prv->name);
     
     
     printf("\nA-OK %lu, %d %d\n", uni_register, db->students, db->size);
