@@ -572,15 +572,15 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
 }
 
 int print (database *db, doublist *dl) {
-    int i;
+    //int i;
     double lf;
     printf("\n#\n");
-     
+    /*
     for (i = 0; i < db->students; i++) {
         printf("%ld %s %hu\n", db->entries[i]->uni_register, db->entries[i]->name, db->entries[i]->fails);
         //slist_print (db->entries[i]->head);
     }
-    
+    */
     lf = (double)db->students / dl->size;
     printf("%d %d %.2lf %d", dl->size, db->students, lf, dl->largest_bucket);
     doublist_print(dl);
@@ -593,8 +593,10 @@ void clear (database *db, doublist *dl) {
     int i;
     
     for (i = 0; i < db->students; i++) {
-        db->entries[i]->classes = 0;
-        slist_clear (&(db->entries[i]->head));
+        if (db->entries[i]->classes > 0) {
+            db->entries[i]->classes = 0;
+            slist_clear (&(db->entries[i]->head));
+        }
         
     }
     doublist_clear (dl);
