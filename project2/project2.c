@@ -33,12 +33,13 @@ struct database {
     int students;       // No of students
 };
 typedef struct database database;
-
+// 
 struct doublist {
     entry **head;
     int size;
     int largest_bucket;
     int list_size[MAX_SIZE];
+    int cleared;
 };
 typedef struct doublist doublist;
 
@@ -74,6 +75,7 @@ entry **doublist_init (doublist *dl, int size) {
     }
     dl->largest_bucket = 0;
     dl->size = size;
+    dl->cleared = NO;
     return dl->head;
 }
 
@@ -87,16 +89,26 @@ unsigned long hash (char *str, int size) {
 
     return (hash % size);
 }
+int find_bucket (doublist *dl) {
+    int i;
+    dl->largest_bucket = 0;
+    for (i = 0; i < dl->size; i++) {
+        if (dl->largest_bucket < dl->list_size[i]) {
+            dl->largest_bucket = dl->list_size[i];
+        }
+    }
+    return dl->largest_bucket;
+}
 // Find, Rmv -> option = 0
 // Add -> option = 1
 entry *doublist_find (doublist *dl, char name[], int option, int index) {
     entry *curr;
-    int i;
+    //int i;
 
-    printf("index-> %d name-> %s\n", index, name);
+    //printf("index-> %d name-> %s\n", index, name);
     strcpy(dl->head[index]->name, name);
     if (option == 0) {
-        for (curr = dl->head[index]->nxt, i = 0; strcmp(curr->name, name); curr = curr->nxt, i++) ;
+        for (curr = dl->head[index]->nxt; strcmp(curr->name, name); curr = curr->nxt) ;
 
         if (curr == dl->head[index]) {
             return NULL;
@@ -106,7 +118,7 @@ entry *doublist_find (doublist *dl, char name[], int option, int index) {
         }
     }
     else {
-        for (curr = dl->head[index]->nxt, i = 0; !(strcmp(curr->name, name) >= 0); curr = curr->nxt, i++) ;
+        for (curr = dl->head[index]->nxt; !(strcmp(curr->name, name) >= 0); curr = curr->nxt) ;
 
         return curr;
     }
@@ -149,16 +161,35 @@ entry *doublist_add (doublist *dl, char name[], long unsigned int uni_register, 
     
     index = hash(name, dl->size);
     curr = doublist_find (dl, new->name, 1, index);
+    while (!strcmp(curr->name, name) && curr->uni_register < uni_register && curr != dl->head[index])
+     {
+        curr = curr->nxt;
+    }
+
     prev_new = curr->prv;
     //printf("curr returned ->%s", curr->name);
-    
     new->nxt = curr;
     new->prv = prev_new;
     curr->prv = new;
     prev_new->nxt = new;
 
     dl->list_size[index]++;
+    if (dl->largest_bucket < dl->list_size[index]) {
+        dl->largest_bucket = dl->list_size[index];
+    }
     return new;
+}
+
+entry *doublist_rmv (doublist *dl, char name[], int index) {
+    entry *curr;
+
+    curr = doublist_find (dl, name, 0, index);
+    //printf("curr-> %s\n", curr->name);
+    curr->prv->nxt = curr->nxt;
+    curr->nxt->prv = curr->prv;
+    // FFFFFFFFFFFFFFFFFFFFUUUUUUUCCCCCKKKKKK
+    //free(curr);
+    return curr;
 }
 
 void doublist_print (doublist *dl) {
@@ -166,7 +197,7 @@ void doublist_print (doublist *dl) {
     int i, j;
 
     for (i = 0; i < dl->size; i++) {
-        printf("\n%d, %d\n", i, dl->list_size[i]);
+        printf("\n%d %d", i, dl->list_size[i]);
         
         for (j = 0, curr = dl->head[i]->nxt; j < dl->list_size[i]; curr = curr->nxt, j++) {
             if (!strcmp(curr->name, "-1")) {
@@ -174,6 +205,7 @@ void doublist_print (doublist *dl) {
             }
             printf(" [%lu %s %hu]", curr->uni_register, curr->name, curr->fails);
         }
+        printf("\n");
         
        // Another way
        /*
@@ -292,6 +324,23 @@ void slist_print (struct simplist *head) {
         curr = curr->nxt;
     }
 
+}
+
+void doublist_clear (doublist *dl) {
+    int i, j;
+    entry *curr;
+
+    for (i = 0; i < dl->size; i++) {
+
+        for (j = 0, curr = dl->head[i]->nxt; j < dl->list_size[i]; curr = curr->nxt, j++) {
+            if (!strcmp(curr->name, "-1")) {
+                break;
+            }
+            free(curr);
+        }
+        
+    }
+    dl->cleared = YES;
 }
 
 void slist_clear (struct simplist **head) {
@@ -524,33 +573,36 @@ int add (struct database *db, long unsigned int uni_register, char name[64], sho
 
 int print (database *db, doublist *dl) {
     int i;
+    double lf;
     printf("\n#\n");
-    
+     
     for (i = 0; i < db->students; i++) {
         printf("%ld %s %hu\n", db->entries[i]->uni_register, db->entries[i]->name, db->entries[i]->fails);
         //slist_print (db->entries[i]->head);
     }
     
-    printf("%d %d %.2lf %d", dl->size, db->students, (double)(db->students / dl->size), dl->largest_bucket);
+    lf = (double)db->students / dl->size;
+    printf("%d %d %.2lf %d", dl->size, db->students, lf, dl->largest_bucket);
     doublist_print(dl);
 
 
     return 1;
 }
 
-void clear (database *db) {
+void clear (database *db, doublist *dl) {
     int i;
     
     for (i = 0; i < db->students; i++) {
         db->entries[i]->classes = 0;
         slist_clear (&(db->entries[i]->head));
+        
     }
-    //free (db->entries);
+    doublist_clear (dl);
     db->size = 0;
     db->students = 0;
     db->entries = NULL;
     db->sorted= NO;
-   
+    
 }
 // Insertion Sort
 void sort (database *db) {
@@ -602,21 +654,45 @@ int mod (database *db, long unsigned int uni_register, short unsigned int fails)
 // Last Registration moves to Removed position
 // + No NULL in-between
 // - Unsorted
-int rmv (database *db, long unsigned int uni_register, int fluctuation) {
-    int pos;
-    entry **ptr;
+int rmv (database *db, doublist *dl, long unsigned int uni_register, int fluctuation) {
+    int pos, index;
+    entry **ptr, *deleted;
 
     pos = find (db, uni_register, db->sorted, 0);
     if (pos == db->size) {
         printf("\nR-NOK %lu, %d %d\n", uni_register, db->students, db->size);
     }
     else {
-        slist_clear (&(db->entries[pos]->head));
-        db->entries[pos]->name[0] = '\0';
-        db->entries[pos]->uni_register = db->entries[db->students - 1]->uni_register;
-        strcpy(db->entries[pos]->name, db->entries[db->students -1]->name);
-        db->entries[pos]->fails = db->entries[db->students - 1]->fails;
-        free(db->entries[db->students - 1]);
+        index = hash (db->entries[pos]->name, dl->size);
+        dl->list_size[index]--;
+        dl->largest_bucket = find_bucket (dl);
+        
+
+        if (pos != db->students - 1) { 
+            db->entries[pos]->name[0] = '\0';
+            db->entries[pos]->uni_register = 0;
+            // Filling the gap with the last student
+            
+            db->entries[pos]->uni_register = db->entries[db->students - 1]->uni_register;
+            strcpy(db->entries[pos]->name, db->entries[db->students -1]->name);
+            db->entries[pos]->fails = db->entries[db->students - 1]->fails;
+            
+            deleted = doublist_rmv (dl, db->entries[pos]->name, index);
+            // Correcting the pointers
+            deleted->nxt = db->entries[db->students - 1]->nxt;
+            deleted->prv = db->entries[db->students - 1]->prv;
+            deleted->head = db->entries[db->students - 1]->head;
+            deleted->classes = db->entries[db->students - 1]->classes;
+            db->entries[db->students - 1]->prv->nxt = deleted;
+            db->entries[db->students - 1]->nxt->prv = deleted;
+            slist_clear (&(db->entries[pos]->head));
+            free(db->entries[db->students - 1]);
+        //free(db->entries[pos]);
+        }
+        else {
+            deleted = doublist_rmv (dl, db->entries[pos]->name, index);
+            free(deleted);
+        }
         
         ptr = MemoryCheck(db, 1, fluctuation);
         if (ptr == NULL) {
@@ -653,6 +729,9 @@ int main (int argc, char *argv[]) {
             case 'a': {
                 scanf(" %lu %s %hu", &uni_register, name, &fails);
                 //index = hash(name);
+                if (dl->cleared == YES) {
+                    dl->head = doublist_init(dl, atoi(argv[3]));
+                }
                 add(db, uni_register, name, fails, fluctuation, dl);
                 break;
             }
@@ -677,7 +756,7 @@ int main (int argc, char *argv[]) {
             }
             case 'r': {
                 scanf(" %lu", &uni_register);
-                pos = rmv (db, uni_register, fluctuation);
+                pos = rmv (db, dl, uni_register, fluctuation);
                 break;
             }
             case 'm': {
@@ -741,12 +820,12 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'c': {
-                clear (db);
+                clear (db, dl);
                 printf("\nC-OK\n");
                 break;
             }
             case 'q': {
-                clear (db);
+                clear (db, dl);
                 return 0;
             }
             default : {
