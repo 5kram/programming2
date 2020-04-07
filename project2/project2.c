@@ -63,9 +63,9 @@ void slinit (struct simplist **head) {
 entry **doublist_init (doublist *dl, int size) {
     entry *sentinel;
     int i;
-
-    dl->head = (entry **)realloc(dl->head, size * sizeof(entry*));
-
+    dl->head = (entry**)malloc(size*sizeof(entry*));
+   // dl->head = (entry **)realloc(dl->head, size * sizeof(entry*));
+    //printf("FEELING LUCKY\n");
     for (i = 0; i < size; i++) {
         sentinel = (entry *)malloc(sizeof(entry));
         strcpy(sentinel->name, "-1");
@@ -336,10 +336,13 @@ void doublist_clear (doublist *dl, int option) {
             if (!strcmp(curr->name, "-1")) {
                 break;
             }
+            
             free(curr);
         }
-        
+        dl->list_size[i] = 0;
     }
+    dl->size = dl->min_size;
+    dl->largest_bucket = 0;
     dl->cleared = YES;
 }
 
@@ -538,7 +541,7 @@ int print (database *db, doublist *dl) {
 doublist *rehash (database *db, doublist *dl, int option) {
     int i, new_size;
     entry *curr;
-    doublist *new_dl;
+    doublist *new_dl = NULL;
 
     if (option) {
         new_size = 2 * dl->size;
@@ -558,7 +561,9 @@ doublist *rehash (database *db, doublist *dl, int option) {
 
     }
     */
+   
     new_dl = (doublist *)malloc(sizeof(doublist));
+    //printf("FEELING LUCKY\n");
     new_dl->head = doublist_init(new_dl, new_size);
     new_dl->size = dl->size;
     new_dl->min_size = dl->min_size;
@@ -585,7 +590,6 @@ doublist *add (struct database *db, long unsigned int uni_register, char name[64
     entry **ptr;
     entry *entry_ptr;
     double lf;
-    
     
     for (i = 0; i < strlen(name); i++) {
         name[i] = toupper(name[i]);
@@ -652,7 +656,7 @@ void clear (database *db, doublist *dl) {
             db->entries[i]->classes = 0;
             slist_clear (&(db->entries[i]->head));
         }
-        
+        //free(db->entries[i]);
     }
     doublist_clear (dl, 0);
     db->size = 0;
@@ -742,7 +746,7 @@ doublist *rmv (database *db, doublist *dl, long unsigned int uni_register, int f
             deleted->prv = db->entries[db->students - 1]->prv;
             deleted->head = db->entries[db->students - 1]->head;
             deleted->classes = db->entries[db->students - 1]->classes;
-            // **if the deleted is the nxt or prv of the last entry ???!!!!!!?!!**
+            // **if the deleted is the nxt or prv of the last entry ???!!!!!!?!!** BUG R 517, STAGE7
             if (deleted != db->entries[db->students - 1]) {
                 db->entries[db->students - 1]->prv->nxt = deleted;
                 db->entries[db->students - 1]->nxt->prv = deleted;
@@ -797,7 +801,9 @@ int main (int argc, char *argv[]) {
                 scanf(" %lu %s %hu", &uni_register, name, &fails);
                 //index = hash(name);
                 if (dl->cleared == YES) {
-                    dl->head = doublist_init(dl, atoi(argv[3]));
+                   dl->head = doublist_init(dl, atoi(argv[3]));
+                   dl->cleared = NO;
+
                 }
                 check = add(db, uni_register, name, fails, fluctuation, dl);
                 if (check == NULL) {
