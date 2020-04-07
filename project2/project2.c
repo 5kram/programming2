@@ -592,7 +592,7 @@ doublist *add (struct database *db, long unsigned int uni_register, char name[64
     }
     pos = find(db, uni_register, db->sorted, 0);
     if (pos < db->size) {
-        printf("\nA-NOK %lu, %d %d\n", uni_register, db->students, db->size);
+        
         return NULL;
     }
     ptr = MemoryCheck(db, 0, fluctuation);
@@ -711,13 +711,15 @@ int mod (database *db, long unsigned int uni_register, short unsigned int fails)
 // Last Registration moves to Removed position
 // + No NULL in-between
 // - Unsorted
-int rmv (database *db, doublist *dl, long unsigned int uni_register, int fluctuation) {
+doublist *rmv (database *db, doublist *dl, long unsigned int uni_register, int fluctuation) {
     int pos, index;
     entry **ptr, *deleted;
+    double lf;
 
     pos = find (db, uni_register, db->sorted, 0);
     if (pos == db->size) {
-        printf("\nR-NOK %lu, %d %d\n", uni_register, db->students, db->size);
+        
+        return NULL;
     }
     else {
         index = hash (db->entries[pos]->name, dl->size);
@@ -740,8 +742,11 @@ int rmv (database *db, doublist *dl, long unsigned int uni_register, int fluctua
             deleted->prv = db->entries[db->students - 1]->prv;
             deleted->head = db->entries[db->students - 1]->head;
             deleted->classes = db->entries[db->students - 1]->classes;
-            db->entries[db->students - 1]->prv->nxt = deleted;
-            db->entries[db->students - 1]->nxt->prv = deleted;
+            // **if the deleted is the nxt or prv of the last entry ???!!!!!!?!!**
+            if (deleted != db->entries[db->students - 1]) {
+                db->entries[db->students - 1]->prv->nxt = deleted;
+                db->entries[db->students - 1]->nxt->prv = deleted;
+            }
             slist_clear (&(db->entries[pos]->head));
             free(db->entries[db->students - 1]);
         //free(db->entries[pos]);
@@ -753,15 +758,20 @@ int rmv (database *db, doublist *dl, long unsigned int uni_register, int fluctua
         
         ptr = MemoryCheck(db, 1, fluctuation);
         if (ptr == NULL) {
-            return 1;
+            return NULL;
         }
         db->entries = ptr;
         db->students--;
         db->sorted = NO;
+
+        lf = (double)db->students / dl->size;
+        if (lf == 1) {
+            dl = rehash (db, dl, 0);
+        }
         printf("\nR-OK %lu, %d %d\n", uni_register, db->students, db->size);
     }
     
-    return 0;
+    return dl;
 }
 
 int main (int argc, char *argv[]) {
@@ -771,7 +781,7 @@ int main (int argc, char *argv[]) {
     short unsigned int fails;
     int fluctuation, pos;
     unsigned short classID;
-    doublist *dl;
+    doublist *dl, *check;
     //unsigned long index;
 
     db = (database *)malloc(sizeof(database));
@@ -789,7 +799,13 @@ int main (int argc, char *argv[]) {
                 if (dl->cleared == YES) {
                     dl->head = doublist_init(dl, atoi(argv[3]));
                 }
-                dl = add(db, uni_register, name, fails, fluctuation, dl);
+                check = add(db, uni_register, name, fails, fluctuation, dl);
+                if (check == NULL) {
+                    printf("\nA-NOK %lu, %d %d\n", uni_register, db->students, db->size);
+                }
+                else {
+                    dl = check;
+                }
                 break;
             }
             case 'g': {
@@ -813,7 +829,13 @@ int main (int argc, char *argv[]) {
             }
             case 'r': {
                 scanf(" %lu", &uni_register);
-                pos = rmv (db, dl, uni_register, fluctuation);
+                check = rmv (db, dl, uni_register, fluctuation);
+                if (check == NULL) {
+                    printf("\nR-NOK %lu, %d %d\n", uni_register, db->students, db->size);
+                }
+                else {
+                    dl = check;
+                }
                 break;
             }
             case 'm': {
