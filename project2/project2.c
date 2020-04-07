@@ -140,7 +140,7 @@ void find_by_name (doublist *dl, char name[], int size) {
             printf("%lu %hu\n", curr->uni_register, curr->fails);
             curr = curr->nxt;
         }
-        while (strcmp(curr->nxt->name, name) && curr != dl->head[index]);
+        while (!strcmp(curr->name, name) && curr != dl->head[index]);
     }
     else {
         printf("\nN-NOK %s\n", name);
