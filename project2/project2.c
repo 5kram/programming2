@@ -46,9 +46,13 @@ typedef struct doublist doublist;
 
 entry **database_init (database *db, int db_size) {
     entry **ptr;
+    //int i;
 
     db->size = db_size;
-    ptr = (entry **)realloc(db->entries, db->size * sizeof(entry*));
+    ptr = (entry **)calloc(db->size , sizeof(entry*));
+    /*for (i = 0; i < db->size; i++) {
+        ptr[i] = NULL;
+    }*/
     db->entries = NULL;
     db->sorted = 0;
     db->students = 0;
@@ -63,7 +67,7 @@ void slinit (struct simplist **head) {
 entry **doublist_init (doublist *dl, int size) {
     entry *sentinel;
     int i;
-    dl->head = (entry**)malloc(size*sizeof(entry*));
+    dl->head = (entry**)calloc(size, sizeof(entry*));
    // dl->head = (entry **)realloc(dl->head, size * sizeof(entry*));
     //printf("FEELING LUCKY\n");
     for (i = 0; i < size; i++) {
@@ -103,14 +107,14 @@ int find_bucket (doublist *dl) {
 // Find, Rmv -> option = 0
 // Add -> option = 1
 entry *doublist_find (doublist *dl, char name[], int option, int index) {
-    entry *curr;
+    entry *curr = NULL;
     //int i;
 
     //printf("index-> %d name-> %s\n", index, name);
     strcpy(dl->head[index]->name, name);
     if (option == 0) {
         for (curr = dl->head[index]->nxt; strcmp(curr->name, name); curr = curr->nxt) ;
-
+        strcpy(dl->head[index]->name, "-1");
         if (curr == dl->head[index]) {
             return NULL;
         }
@@ -120,7 +124,7 @@ entry *doublist_find (doublist *dl, char name[], int option, int index) {
     }
     else {
         for (curr = dl->head[index]->nxt; !(strcmp(curr->name, name) >= 0); curr = curr->nxt) ;
-
+        strcpy(dl->head[index]->name, "-1");
         return curr;
     }
 
@@ -152,8 +156,9 @@ void find_by_name (doublist *dl, char name[], int size) {
 entry *doublist_add (doublist *dl, char name[], long unsigned int uni_register, short unsigned int fails, int classes) {
     entry *curr, *prev_new, *new;
     int index;
+    curr = NULL;
     // Returns the next node
-    new = (entry *)malloc(sizeof(entry));
+    new = (entry *)calloc(1, sizeof(entry));
     new->uni_register = uni_register;
     strcpy(new->name, name);
     new->fails = fails;
@@ -340,7 +345,11 @@ void doublist_clear (doublist *dl, int option) {
             free(curr);
         }
         dl->list_size[i] = 0;
-    }
+        
+    }/*
+    if (option) {
+            free(dl->head);
+        }*/
     dl->size = dl->min_size;
     dl->largest_bucket = 0;
     dl->cleared = YES;
@@ -575,6 +584,7 @@ doublist *rehash (database *db, doublist *dl, int option) {
        // doublist_rmv(dl, db->entries[i]->name, hash(db->entries[i]->name, dl->size) )
     }
     new_dl->cleared = dl->cleared;
+    //doublist_clear(dl, 1);
     //i = print (db, new_dl);
     free(dl);
     //dl = (doublist *)malloc(sizeof(doublist));
@@ -647,8 +657,9 @@ doublist *add (struct database *db, long unsigned int uni_register, char name[64
 }
 
 
-
-void clear (database *db, doublist *dl) {
+// free all -> 1
+// claer -> 0
+void clear (database *db, doublist *dl, int option) {
     int i;
     
     for (i = 0; i < db->students; i++) {
@@ -658,7 +669,7 @@ void clear (database *db, doublist *dl) {
         }
         //free(db->entries[i]);
     }
-    doublist_clear (dl, 0);
+    doublist_clear (dl, option);
     db->size = 0;
     db->students = 0;
     db->entries = NULL;
@@ -779,7 +790,7 @@ doublist *rmv (database *db, doublist *dl, long unsigned int uni_register, int f
 }
 
 int main (int argc, char *argv[]) {
-    struct database *db;
+    database *db;
     char option, name[64];
     long unsigned int uni_register;
     short unsigned int fails;
@@ -905,12 +916,12 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'c': {
-                clear (db, dl);
+                clear (db, dl, 0);
                 printf("\nC-OK\n");
                 break;
             }
             case 'q': {
-                clear (db, dl);
+                clear (db, dl, 1);
                 return 0;
             }
             default : {
