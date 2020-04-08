@@ -44,30 +44,31 @@ struct doublist {
 };
 typedef struct doublist doublist;
 
-entry **database_init (database *db, int db_size) {
-    entry **ptr;
+void database_init (database **db, int db_size) {
+    //entry **ptr;
     //int i;
-
-    db->size = db_size;
-    ptr = (entry **)calloc(db->size , sizeof(entry*));
+    *db = (database *)malloc(sizeof(database));
+    (*db)->size = db_size;
+    (*db)->entries = (entry **)calloc((*db)->size , sizeof(entry*));
     /*for (i = 0; i < db->size; i++) {
         ptr[i] = NULL;
     }*/
-    db->entries = NULL;
-    db->sorted = 0;
-    db->students = 0;
+    (*db)->entries = NULL;
+    (*db)->sorted = 0;
+    (*db)->students = 0;
     
-    return ptr;
+    return ;
 }
 
 void slinit (struct simplist **head) {
     *head = NULL;
 }
 
-entry **doublist_init (doublist *dl, int size) {
+void doublist_init (doublist **dl, int size) {
     entry *sentinel;
     int i;
-    dl->head = (entry**)calloc(size, sizeof(entry*));
+    *dl = (doublist *)malloc(sizeof(doublist));
+    (*dl)->head = (entry**)calloc(size, sizeof(entry*));
    // dl->head = (entry **)realloc(dl->head, size * sizeof(entry*));
     //printf("FEELING LUCKY\n");
     for (i = 0; i < size; i++) {
@@ -75,13 +76,13 @@ entry **doublist_init (doublist *dl, int size) {
         strcpy(sentinel->name, "-1");
         sentinel->nxt = sentinel;
         sentinel->prv = sentinel;
-        dl->head[i] = sentinel;
-        dl->list_size[i] = 0;
+        (*dl)->head[i] = sentinel;
+        (*dl)->list_size[i] = 0;
     }
-    dl->largest_bucket = 0;
-    dl->size = size;
-    dl->cleared = NO;
-    return dl->head;
+    (*dl)->largest_bucket = 0;
+    (*dl)->size = size;
+    (*dl)->cleared = NO;
+    return ;
 }
 
 unsigned long hash (char *str, int size) {
@@ -331,28 +332,28 @@ void slist_print (struct simplist *head) {
 }
 // Rehash -> 1 (free(all))
 // Clear -> 0
-void doublist_clear (doublist *dl, int option) {
+void doublist_clear (doublist **dl, int option) {
     int i, j;
     entry *curr;
 
-    for (i = 0; i < dl->size; i++) {
+    for (i = 0; i < (*dl)->size; i++) {
 
-        for (j = 0, curr = dl->head[i]->nxt; j < dl->list_size[i]; curr = curr->nxt, j++) {
+        for (j = 0, curr = (*dl)->head[i]->nxt; j < (*dl)->list_size[i]; curr = curr->nxt, j++) {
             if (!strcmp(curr->name, "-1")) {
                 break;
             }
             
             free(curr);
         }
-        dl->list_size[i] = 0;
+        (*dl)->list_size[i] = 0;
         
-    }/*
+    }
     if (option) {
-            free(dl->head);
-        }*/
-    dl->size = dl->min_size;
-    dl->largest_bucket = 0;
-    dl->cleared = YES;
+        free((*dl)->head);
+    }
+    (*dl)->size = (*dl)->min_size;
+    (*dl)->largest_bucket = 0;
+    (*dl)->cleared = YES;
 }
 
 void slist_clear (struct simplist **head) {
@@ -571,9 +572,9 @@ doublist *rehash (database *db, doublist *dl, int option) {
     }
     */
    
-    new_dl = (doublist *)malloc(sizeof(doublist));
+    
     //printf("FEELING LUCKY\n");
-    new_dl->head = doublist_init(new_dl, new_size);
+    doublist_init(&new_dl, new_size);
     new_dl->size = dl->size;
     new_dl->min_size = dl->min_size;
     new_dl->largest_bucket = 0;
@@ -659,21 +660,27 @@ doublist *add (struct database *db, long unsigned int uni_register, char name[64
 
 // free all -> 1
 // claer -> 0
-void clear (database *db, doublist *dl, int option) {
+void clear (database **db, doublist **dl, int option) {
     int i;
     
-    for (i = 0; i < db->students; i++) {
-        if (db->entries[i]->classes > 0) {
-            db->entries[i]->classes = 0;
-            slist_clear (&(db->entries[i]->head));
+    for (i = 0; i < (*db)->students; i++) {
+        if ((*db)->entries[i]->classes > 0) {
+            (*db)->entries[i]->classes = 0;
+            slist_clear (&((*db)->entries[i]->head));
         }
-        //free(db->entries[i]);
+        
     }
-    doublist_clear (dl, option);
-    db->size = 0;
-    db->students = 0;
-    db->entries = NULL;
-    db->sorted= NO;
+    doublist_clear (&(*dl), option);
+    (*db)->size = 0;
+    (*db)->students = 0;
+    (*db)->entries = NULL;
+    (*db)->sorted= NO;
+    if (option) {
+        //free((*db)->entries);
+        //free(*db);
+        //free((*dl)->head);
+       //free(*dl);
+    }
     
 }
 // Insertion Sort
@@ -798,12 +805,9 @@ int main (int argc, char *argv[]) {
     unsigned short classID;
     doublist *dl, *check;
     //unsigned long index;
-
-    db = (database *)malloc(sizeof(database));
-    dl = (doublist *)malloc(sizeof(doublist));
+    database_init (&db, atoi(argv[1]));
+    doublist_init(&dl, atoi(argv[3]));
     fluctuation = atoi(argv[2]);
-    db->entries = database_init(db, atoi(argv[1]));
-    dl->head = doublist_init(dl, atoi(argv[3]));
     dl->min_size = atoi(argv[3]);
     do {
         scanf (" %c", &option);
@@ -812,7 +816,7 @@ int main (int argc, char *argv[]) {
                 scanf(" %lu %s %hu", &uni_register, name, &fails);
                 //index = hash(name);
                 if (dl->cleared == YES) {
-                   dl->head = doublist_init(dl, atoi(argv[3]));
+                   doublist_init(&dl, atoi(argv[3]));
                    dl->cleared = NO;
 
                 }
@@ -916,12 +920,12 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'c': {
-                clear (db, dl, 0);
+                clear (&db, &dl, 0);
                 printf("\nC-OK\n");
                 break;
             }
             case 'q': {
-                clear (db, dl, 1);
+                clear (&db, &dl, 1);
                 return 0;
             }
             default : {

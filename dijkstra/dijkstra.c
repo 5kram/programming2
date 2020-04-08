@@ -36,43 +36,63 @@ void initialization(int edges[N][N], int dist[N], int prev[N], int visited[N]){
 }
 
 void findCheapestPath (const int edges[N][N], int dist[N], int prev[N], int visited[N], int start) {
-    int i, repeats = 0, curr, minDist = INF, minIndex;
+    int i, repeats = 0, curr, minDist = INF, Index, neigh[N];
 
-    dist[start] = 0;
+    
     for (i = 1; i < N; i++) {
         dist[i] = INF;
+        neigh[i] = 0;
     }
     curr = start;
+    dist[start] = 0;
     do {
         for (i = 0; i < N; i++) {
             if (edges[curr][i] > 0 && visited[i] == 0) {
+                neigh[i] = 1;
                 if (edges[curr][i] + dist[curr] < dist[i]) {
                     dist[i] = edges[curr][i] + dist[curr];
                     prev[i] = curr;
-                    printf("curr -> %d i -> %d dist[%d] -> %d\n", curr, i, i, dist[i]);
-                    if (dist[i] < minDist) {
-                        minDist = dist[i];
-                        minIndex = i;
-                        printf("Index -> %d\n", minIndex);
-                    }
+                    printf("curr -> %d i -> %d dist[%d] -> %d prev[%d] -> %d\n", curr, i, i, dist[i], i, prev[i]);       
                 }
             }
         }
-        printf("prev[curr] -> %d\n", prev[curr]);
         visited[curr] = 1;
-        curr = minIndex;
+        for (i = 0; i < N; i++) {
+            if (neigh[i] && !visited[i]) {
+                printf("dist[%d] -> %d\n", i, dist[i]);
+                if (dist[i] < minDist) {
+                    minDist = dist[i];
+                    Index = i;
+                    printf("Index -> %d\n", Index);
+                }
+            }    
+        }
+        printf("curr <- %d\n", Index);
+        curr = Index;
         repeats++;
         minDist = INF;
     }
     while (repeats < N);
-
 }
 
 int main (int argc, char *argv[]) {
-    int edges[N][N], dist[N], prev[N], visited[N];
+    int edges[N][N], dist[N], prev[N], visited[N], end, start;
 
     initialization (edges, dist, prev, visited);
-    findCheapestPath (edges, dist, prev, visited, 0);
+    printf("Enter start point:\n");
+    scanf(" %d", &start);
+    findCheapestPath (edges, dist, prev, visited, start);
+    
+    prev[start] = -1;
+    printf("Pick an end:\n");
+    scanf(" %d", &end);
+    
+    do {
+        printf("-> %d", end);
+        end = prev[end];
+    }
+    while (end != -1);
+    printf("\n");
 
     return 0;
 }

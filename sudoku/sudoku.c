@@ -5,7 +5,7 @@
 #define MIN 1
 
 int main (int argc, char *argv[]) {
-    int i, j, table[MAX][MAX], usedRow[MAX], k;
+    int i, j, table[MAX][MAX], usedRow[MAX], k, usedCol[MAX][MAX];
 
     for (i = 0; i < MAX; i++) {
         usedRow[i] = 0;
@@ -15,15 +15,16 @@ int main (int argc, char *argv[]) {
         for (j = MIN - 1; j < MAX; j++) {
             if (j == MIN - 1) {
                 table[i][j] = (rand() % (MAX - MIN + 1)) + MIN;
-                usedRow[table[i][j]] = 1;
+                //usedRow[table[i][j]] = 1;
                 
             }
             else {
                 do {
+                    usedCol[i][table[i][j - 1]] = 1;
                     usedRow[table[i][j - 1]] = 1;
                     table[i][j] = (rand() % (MAX - MIN + 1)) + MIN;
                 }
-                while (usedRow[table[i][j]]);
+                while (usedRow[table[i][j]] && );
             }
         }
         for (j = MIN; j <= MAX; j++) {
@@ -31,6 +32,16 @@ int main (int argc, char *argv[]) {
         }
     }
     printf("\n");
+    /*for (k = MIN - 1; k < 4 * MAX - 2; k++) {
+        if ((k == 9 || k == 21 || k == 33)) {
+            printf("|");
+        }
+        else {
+            printf("-");
+        }
+    }
+    printf("\n");
+    */
     for (i = MIN - 1; i < MAX; i++) {
         for (j = MIN - 1; j < MAX; j++) {
             printf("%d  ", table[i][j]);
@@ -38,7 +49,7 @@ int main (int argc, char *argv[]) {
                 printf("|  ");
             }
         }
-        if (!((i + 1) % 3)) {
+        if (i == 2 || i == 5) {
             printf("\n");
             for (k = MIN - 1; k < 4 * MAX - 2; k++) {
                 if ((k == 9 || k == 21 || k == 33)) {

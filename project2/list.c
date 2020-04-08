@@ -11,7 +11,7 @@ struct simplist {
 };
 typedef struct simplist simplist;
 
-void simplinit (struct simplist **head) {
+void slinit (struct simplist **head) {
     *head = NULL;
 }
 // If option = 1 -> find
@@ -19,7 +19,7 @@ void simplinit (struct simplist **head) {
 // If option = -1 -> rmv
 // Returns curr
 
-simplist *simplist_find (struct simplist *head, unsigned short classID, char option) {
+simplist *slist_find (struct simplist *head, unsigned short classID, char option) {
     struct simplist *curr, *prev;
     
     for (curr = head, prev = head; curr != NULL; curr = curr->nxt) {
@@ -47,7 +47,7 @@ simplist *simplist_find (struct simplist *head, unsigned short classID, char opt
     }
 }
 
-int simplist_add (struct simplist **head, unsigned short classID) {
+int slist_add (struct simplist **head, unsigned short classID) {
     struct simplist *curr, *prev;
     // Empty list
     if (*head == NULL) {
@@ -60,7 +60,7 @@ int simplist_add (struct simplist **head, unsigned short classID) {
     }
     // Returns the prev pointer
     // prev->classID < classID < nxt->classID
-    prev = simplist_find (*head, classID, 0);
+    prev = slist_find (*head, classID, 0);
     // ClassID already exists
     if (prev->classID == classID) {
         printf("Already exists\n");
@@ -84,17 +84,15 @@ int simplist_add (struct simplist **head, unsigned short classID) {
     return 0;
 }
 
-int simplist_rmv (struct simplist **head, unsigned short classID) {
+int slist_rmv (struct simplist **head, unsigned short classID) {
     struct simplist *prev, *curr;
 
-    prev = simplist_find (*head, classID, -1);
+    prev = slist_find (*head, classID, -1);
     
         if (prev == *head && prev->classID == classID) {
             curr = prev;
             //printf("HEAD-> %d\n",prev->nxt->classID);
-
             *head = prev->nxt;
-            
             free(curr);
             return 1;
         }
@@ -104,15 +102,11 @@ int simplist_rmv (struct simplist **head, unsigned short classID) {
             prev->nxt = prev->nxt->nxt;
             free (curr);
         }
-        
-    
-
-
 
     return 0;
 }
 
-void print_list (struct simplist *head) {
+void slist_print (struct simplist *head) {
     simplist *curr;
 
     curr = head;
@@ -121,6 +115,18 @@ void print_list (struct simplist *head) {
         curr = curr->nxt;
     }
     printf("\n");
+}
+
+void slist_clear (struct simplist **head) {
+    simplist *curr, *prev;
+
+    curr = *head; 
+    while (curr != NULL) {
+        prev = curr;
+        curr = prev->nxt;
+        free(prev);
+    }
+    *head = NULL;
 }
 
 int main (int argc, char *argv[]) {
@@ -137,20 +143,20 @@ int main (int argc, char *argv[]) {
             case 'a': {
                 printf("Enter classID: ");
                 scanf(" %d", &classID);
-                check = simplist_add(&head, classID);
+                check = slist_add(&head, classID);
                 if (check) {
                     printf("DOING\n");
                 }
                 break;
             }
             case 'p': {
-                print_list(head);
+                slist_print(head);
                 break;
             }
             case 'f': {
                 printf("Enter ClassID: ");
                 scanf(" %d", &classID);
-                curr = simplist_find (head, classID, 1);
+                curr = slist_find (head, classID, 1);
                 if (curr == NULL) {
                     printf("NOT FOUND\n");
                 }
@@ -162,10 +168,15 @@ int main (int argc, char *argv[]) {
             case 'r': {
                 printf("Enter ClassID: ");
                 scanf(" %d", &classID);
-                check = simplist_rmv (&head, classID);
+                check = slist_rmv (&head, classID);
+                break;
+            }
+            case 'c': {
+                slist_clear (&head);
                 break;
             }
             case 'q': {
+                slist_clear (&head);
                 return 0;
             }
         }
