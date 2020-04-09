@@ -47,13 +47,15 @@ typedef struct doublist doublist;
 void database_init (database **db, int db_size) {
     //entry **ptr;
     //int i;
+
     *db = (database *)malloc(sizeof(database));
+    
     (*db)->size = db_size;
     (*db)->entries = (entry **)calloc((*db)->size , sizeof(entry*));
     /*for (i = 0; i < db->size; i++) {
         ptr[i] = NULL;
     }*/
-    (*db)->entries = NULL;
+    
     (*db)->sorted = 0;
     (*db)->students = 0;
     
@@ -67,7 +69,7 @@ void slinit (struct simplist **head) {
 void doublist_init (doublist **dl, int size) {
     entry *sentinel;
     int i;
-    *dl = (doublist *)malloc(sizeof(doublist));
+    (*dl) = (doublist *)malloc(sizeof(doublist));
     (*dl)->head = (entry**)calloc(size, sizeof(entry*));
    // dl->head = (entry **)realloc(dl->head, size * sizeof(entry*));
     //printf("FEELING LUCKY\n");
@@ -332,28 +334,28 @@ void slist_print (struct simplist *head) {
 }
 // Rehash -> 1 (free(all))
 // Clear -> 0
-void doublist_clear (doublist **dl, int option) {
+void doublist_clear (doublist *dl, int option) {
     int i, j;
     entry *curr;
 
-    for (i = 0; i < (*dl)->size; i++) {
+    for (i = 0; i < dl->size; i++) {
 
-        for (j = 0, curr = (*dl)->head[i]->nxt; j < (*dl)->list_size[i]; curr = curr->nxt, j++) {
+        for (j = 0, curr = dl->head[i]->nxt; j < dl->list_size[i]; curr = curr->nxt, j++) {
             if (!strcmp(curr->name, "-1")) {
                 break;
             }
             
             free(curr);
         }
-        (*dl)->list_size[i] = 0;
+        dl->list_size[i] = 0;
         
-    }
+    }/*
     if (option) {
-        free((*dl)->head);
-    }
-    (*dl)->size = (*dl)->min_size;
-    (*dl)->largest_bucket = 0;
-    (*dl)->cleared = YES;
+            free(dl->head);
+        }*/
+    dl->size = dl->min_size;
+    dl->largest_bucket = 0;
+    dl->cleared = YES;
 }
 
 void slist_clear (struct simplist **head) {
@@ -568,11 +570,10 @@ doublist *rehash (database *db, doublist *dl, int option) {
    
     for (i = 0; i < dl->size; i++) {
         strcpy(dl->head[i]->name, "-1");
-
     }
     */
    
-    
+    //new_dl = (doublist *)malloc(sizeof(doublist));
     //printf("FEELING LUCKY\n");
     doublist_init(&new_dl, new_size);
     new_dl->size = dl->size;
@@ -660,27 +661,21 @@ doublist *add (struct database *db, long unsigned int uni_register, char name[64
 
 // free all -> 1
 // claer -> 0
-void clear (database **db, doublist **dl, int option) {
+void clear (database *db, doublist *dl, int option) {
     int i;
     
-    for (i = 0; i < (*db)->students; i++) {
-        if ((*db)->entries[i]->classes > 0) {
-            (*db)->entries[i]->classes = 0;
-            slist_clear (&((*db)->entries[i]->head));
+    for (i = 0; i < db->students; i++) {
+        if (db->entries[i]->classes > 0) {
+            db->entries[i]->classes = 0;
+            slist_clear (&(db->entries[i]->head));
         }
-        
+        //free(db->entries[i]);
     }
-    doublist_clear (&(*dl), option);
-    (*db)->size = 0;
-    (*db)->students = 0;
-    (*db)->entries = NULL;
-    (*db)->sorted= NO;
-    if (option) {
-        //free((*db)->entries);
-        //free(*db);
-        //free((*dl)->head);
-       //free(*dl);
-    }
+    doublist_clear (dl, option);
+    db->size = 0;
+    db->students = 0;
+    db->entries = NULL;
+    db->sorted= NO;
     
 }
 // Insertion Sort
@@ -805,9 +800,10 @@ int main (int argc, char *argv[]) {
     unsigned short classID;
     doublist *dl, *check;
     //unsigned long index;
-    database_init (&db, atoi(argv[1]));
-    doublist_init(&dl, atoi(argv[3]));
+
     fluctuation = atoi(argv[2]);
+    database_init(&db, atoi(argv[1]));
+    doublist_init(&dl, atoi(argv[3]));
     dl->min_size = atoi(argv[3]);
     do {
         scanf (" %c", &option);
@@ -920,12 +916,12 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'c': {
-                clear (&db, &dl, 0);
+                clear (db, dl, 0);
                 printf("\nC-OK\n");
                 break;
             }
             case 'q': {
-                clear (&db, &dl, 1);
+                clear (db, dl, 1);
                 return 0;
             }
             default : {
