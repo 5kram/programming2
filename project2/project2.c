@@ -334,28 +334,32 @@ void slist_print (struct simplist *head) {
 }
 // Rehash -> 1 (free(all))
 // Clear -> 0
-void doublist_clear (doublist *dl, int option) {
+void doublist_clear (doublist **dl, int option) {
     int i, j;
     entry *curr;
 
-    for (i = 0; i < dl->size; i++) {
+    for (i = 0; i < (*dl)->size; i++) {
 
-        for (j = 0, curr = dl->head[i]->nxt; j < dl->list_size[i]; curr = curr->nxt, j++) {
+        for (j = 0, curr = (*dl)->head[i]->nxt; j < (*dl)->list_size[i]; curr = curr->nxt, j++) {
             if (!strcmp(curr->name, "-1")) {
                 break;
             }
             
             free(curr);
         }
-        dl->list_size[i] = 0;
+        (*dl)->list_size[i] = 0;
+        if (option) {
+            //free(dl->head[i]->nxt);
+            free((*dl)->head[i]);
+        }
         
-    }/*
+    }
     if (option) {
-            free(dl->head);
-        }*/
-    dl->size = dl->min_size;
-    dl->largest_bucket = 0;
-    dl->cleared = YES;
+            free((*dl)->head);
+        }
+    (*dl)->size = (*dl)->min_size;
+    (*dl)->largest_bucket = 0;
+    (*dl)->cleared = YES;
 }
 
 void slist_clear (struct simplist **head) {
@@ -551,10 +555,10 @@ int print (database *db, doublist *dl) {
 // add -> 1
 // rmv -> 0
 doublist *rehash (database *db, doublist *dl, int option) {
-    int i, new_size;
+    int i, new_size, j, old;
     entry *curr;
     doublist *new_dl = NULL;
-
+    old  = dl->size;
     if (option) {
         new_size = 2 * dl->size;
     }
@@ -583,11 +587,30 @@ doublist *rehash (database *db, doublist *dl, int option) {
         
         curr = doublist_add (new_dl, db->entries[i]->name, db->entries[i]->uni_register, db->entries[i]->fails, db->entries[i]->classes);
         db->entries[i] = curr;
+        
+        slist_clear(&(db->entries[i]->head));
+        
+           
        // doublist_rmv(dl, db->entries[i]->name, hash(db->entries[i]->name, dl->size) )
     }
     new_dl->cleared = dl->cleared;
-    //doublist_clear(dl, 1);
+     for (i = 0; i < old; i++) {
+
+        for (j = 0, curr = (dl)->head[i]->nxt; j < (dl)->list_size[i]; curr = curr->nxt, j++) {
+            if (!strcmp(curr->name, "-1")) {
+                break;
+            }
+            
+            free(curr);
+        }
+        free((dl)->head[i]);
+    }
+    free((dl)->head);
+        
+   // doublist_clear(&dl, 1);
     //i = print (db, new_dl);
+    
+   // free(dl->head);
     free(dl);
     //dl = (doublist *)malloc(sizeof(doublist));
     //dl->head = doublist_init(dl, new_size);
@@ -597,7 +620,7 @@ doublist *rehash (database *db, doublist *dl, int option) {
     return new_dl;
 }
 
-doublist *add (struct database *db, long unsigned int uni_register, char name[64], short unsigned int fails, int fluctuation, doublist *dl) {
+void add (database **db, long unsigned int uni_register, char name[64], short unsigned int fails, int fluctuation, doublist **dl) {
     int pos = 0, i, classes;
     entry **ptr;
     entry *entry_ptr;
@@ -606,17 +629,17 @@ doublist *add (struct database *db, long unsigned int uni_register, char name[64
     for (i = 0; i < strlen(name); i++) {
         name[i] = toupper(name[i]);
     }
-    pos = find(db, uni_register, db->sorted, 0);
-    if (pos < db->size) {
-        
-        return NULL;
+    pos = find(*db, uni_register, (*db)->sorted, 0);
+    if (pos < (*db)->size) {
+        printf("\nA-NOK %lu, %d %d\n", uni_register, (*db)->students, (*db)->size);
+        return ;
     }
-    ptr = MemoryCheck(db, 0, fluctuation);
+    ptr = MemoryCheck(*db, 0, fluctuation);
     if (ptr == NULL) {
-        return NULL;
+        return ;
     }
 
-    db->entries = ptr;
+    (*db)->entries = ptr;
     // Dynamically Allocate Memory for a specific entry
     /*
     entry_ptr = (entry *)malloc(sizeof(entry));
@@ -635,10 +658,10 @@ doublist *add (struct database *db, long unsigned int uni_register, char name[64
     
     //curr = db->entries[db->students - 1];
     classes = 0;
-    entry_ptr = doublist_add (dl, name, uni_register, fails, classes);
-    db->entries[db->students] = entry_ptr;
-    db->students++;
-    db->sorted = NO;
+    entry_ptr = doublist_add (*dl, name, uni_register, fails, classes);
+    (*db)->entries[(*db)->students] = entry_ptr;
+    (*db)->students++;
+    (*db)->sorted = NO;
     /*
     curr->nxt = dl->head[index]->nxt;
     curr->prv = dl->head[index];
@@ -648,34 +671,41 @@ doublist *add (struct database *db, long unsigned int uni_register, char name[64
     
     //printf("curr->name: %s curr->prv->name: %s\n", entry_ptr->name, entry_ptr->prv->name);
     
-    lf = (double)db->students / dl->size;
+    lf = (double)(*db)->students / (*dl)->size;
     if (lf >= 4) {
-        dl = rehash (db, dl, 1);
+        *dl = rehash ((*db), (*dl), 1);
     }
     
-    printf("\nA-OK %lu, %d %d\n", uni_register, db->students, db->size);
+    printf("\nA-OK %lu, %d %d\n", uni_register, (*db)->students, (*db)->size);
 
-    return dl;
+    return ;
 }
 
 
 // free all -> 1
 // claer -> 0
-void clear (database *db, doublist *dl, int option) {
+void clear (database **db, doublist **dl, int option) {
     int i;
     
-    for (i = 0; i < db->students; i++) {
-        if (db->entries[i]->classes > 0) {
-            db->entries[i]->classes = 0;
-            slist_clear (&(db->entries[i]->head));
+    for (i = 0; i < (*db)->students; i++) {
+        if ((*db)->entries[i]->classes > 0) {
+            (*db)->entries[i]->classes = 0;
+            slist_clear (&((*db)->entries[i]->head));
         }
         //free(db->entries[i]);
     }
-    doublist_clear (dl, option);
-    db->size = 0;
-    db->students = 0;
-    db->entries = NULL;
-    db->sorted= NO;
+    doublist_clear (&(*dl), option);
+    (*db)->size = 0;
+    (*db)->students = 0;
+    (*db)->entries = NULL;
+    (*db)->sorted= NO;
+    if (option) {
+        free((*dl)->head);
+        free(*dl);
+        free((*db)->entries);
+        free(*db);
+        
+    }
     
 }
 // Insertion Sort
@@ -816,13 +846,8 @@ int main (int argc, char *argv[]) {
                    dl->cleared = NO;
 
                 }
-                check = add(db, uni_register, name, fails, fluctuation, dl);
-                if (check == NULL) {
-                    printf("\nA-NOK %lu, %d %d\n", uni_register, db->students, db->size);
-                }
-                else {
-                    dl = check;
-                }
+                add(&db, uni_register, name, fails, fluctuation, &dl);
+                
                 break;
             }
             case 'g': {
@@ -916,12 +941,12 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'c': {
-                clear (db, dl, 0);
+                clear (&db, &dl, 0);
                 printf("\nC-OK\n");
                 break;
             }
             case 'q': {
-                clear (db, dl, 1);
+                clear (&db, &dl, 1);
                 return 0;
             }
             default : {
