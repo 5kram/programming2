@@ -1,0 +1,39 @@
+p
+a 2 Sinclair_O_Micah 2
+a 4 Gibson_A_Sofia 44
+g 2 120
+g 4 150
+a 8 Sinclair_O_Teighan 29
+a 7 Hayes_J_Mohammed 38
+a 3 French_S_Gracie 22
+p
+g 3 300
+g 3 200
+g 4 100
+g 8 120
+g 8 200
+a 1 Chandler_H_Charles 17
+a 5 Shane_R_Eleanor 18
+a 6 Mcgrath_L_William 44
+p
+r 7
+r 3
+r 8
+r 5
+m 3 11
+m 2 11
+p
+a 12 atkins_m_harrison 12
+a 17 ALLAN_R_ROXANNE 17
+a 19 WRIGHT_R_LENA 19
+g 19 300
+g 17 100
+l 17
+l 19
+p
+c
+a 33 OWENS_T_JOSHUA 26
+g 33 600
+g 33 100
+p
+q

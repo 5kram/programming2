@@ -1,0 +1,58 @@
+
+A-OK 1, 1 10
+
+A-OK 5, 2 10
+
+A-OK 6, 3 10
+
+A-OK 2, 4 10
+
+A-OK 3, 5 10
+
+A-OK 4, 6 10
+
+G-OK 2 120
+
+G-OK 2 130
+
+G-OK 2 140
+
+G-OK 4 200
+
+G-OK 4 150
+
+G-OK 4 300
+
+G-OK 4 250
+
+G-OK 4 100
+
+G-NOK 200
+
+G-NOK 8
+
+L-OK SINCLAIR_O_MICAH
+120
+130
+140
+
+L-OK GIBSON_A_SOFIA
+100
+150
+200
+250
+300
+
+L-NOK 8
+
+NO
+
+YES
+
+YES
+
+NO
+
+NO
+
+I-NOK 8
