@@ -1,0 +1,85 @@
+
+A-OK 8, 1 1
+
+A-OK 1, 2 5
+
+A-OK 5, 3 5
+
+A-OK 12, 4 5
+
+A-OK 6, 5 5
+
+A-OK 2, 6 9
+
+A-OK 3, 7 9
+
+A-OK 7, 8 9
+
+A-OK 10, 9 9
+
+A-OK 4, 10 13
+
+R-OK 1, 9 13
+
+R-OK 2, 8 9
+
+R-OK 3, 7 9
+
+R-OK 4, 6 9
+
+R-OK 5, 5 9
+
+R-OK 6, 4 5
+
+R-OK 7, 3 5
+
+R-OK 8, 2 5
+
+R-OK 10, 1 5
+
+R-OK 12, 0 1
+
+R-NOK 1, 0 1
+
+#
+
+F-NOK 8
+
+A-OK 38, 1 1
+
+A-OK 58, 2 5
+
+A-OK 73, 3 5
+
+A-OK 55, 4 5
+
+A-OK 20, 5 5
+
+F-OK MCINTYRE_K_CRAIG 11
+
+F-NOK 12
+
+C-OK
+
+#
+
+R-NOK 12, 0 0
+
+F-NOK 38
+
+F-NOK 20
+
+A-OK 7, 1 4
+
+A-OK 10, 2 4
+
+A-OK 4, 3 4
+
+F-OK RHODES_S_ISABEL 4
+
+#
+7 SASSE_S_XAVIER 8
+10 RHODES_S_ISABEL 4
+4 GIBSON_A_SOFIA 44
+
+R-NOK 20, 3 4

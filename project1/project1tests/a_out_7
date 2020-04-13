@@ -1,0 +1,58 @@
+
+#
+
+A-OK 8, 1 15
+
+A-OK 1, 2 15
+
+A-OK 5, 3 15
+
+A-OK 12, 4 15
+
+A-OK 6, 5 15
+
+A-OK 2, 6 15
+
+A-OK 3, 7 15
+
+A-OK 7, 8 15
+
+A-OK 10, 9 15
+
+A-OK 4, 10 15
+
+R-OK 4, 9 15
+
+R-OK 8, 8 15
+
+R-OK 6, 7 15
+
+R-OK 1, 6 15
+
+R-OK 10, 5 15
+
+R-NOK 11, 5 15
+
+F-NOK 8
+
+F-NOK 1
+
+F-OK SHANE_R_ELEANOR 18
+
+F-OK BOYETT_S_AL 3
+
+F-NOK 6
+
+F-OK SINCLAIR_O_MICAH 2
+
+F-OK WALTER_H_AVA 22
+
+F-OK SASSE_S_XAVIER 8
+
+F-NOK 10
+
+F-NOK 4
+
+F-NOK 11
+
+F-OK BOYETT_S_AL 3

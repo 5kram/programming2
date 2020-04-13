@@ -1,0 +1,34 @@
+
+A-OK 8, 1 5
+
+A-NOK 8, 1 5
+
+A-OK 1, 2 5
+
+A-OK 5, 3 5
+
+A-OK 12, 4 5
+
+A-OK 6, 5 5
+
+A-OK 2, 6 13
+
+A-OK 3, 7 13
+
+A-OK 10, 8 13
+
+A-OK 7, 9 13
+
+A-NOK 10, 9 13
+
+A-OK 4, 10 13
+
+A-NOK 12, 10 13
+
+F-OK BOYETT_S_AL 3
+
+F-OK BENITEZ_J_MARY 6
+
+F-OK SASSE_S_XAVIER 8
+
+F-NOK 9
