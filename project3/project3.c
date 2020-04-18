@@ -7,10 +7,10 @@
 #define DB_ERROR -1
 #define YES 1
 #define NO 0
-#define DEBUG
+//#define DEBUG
 
 int main (int argc, char *argv[]) {
-    char option, dbname[NAME_LEN];
+    char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN];
     int check;
     FILE *fp = NULL;
 
@@ -19,7 +19,7 @@ int main (int argc, char *argv[]) {
         switch(option) {
             case 'o': {
                 scanf("%s", dbname);
-                check = open (fp, dbname);
+                check = open (&fp, dbname);
                 if (check == -1) {
                     printf("\nError opening %s.\n", dbname);
                 }
@@ -31,9 +31,20 @@ int main (int argc, char *argv[]) {
                 if (check == 0) {
                     printf("\nInvalid db file %s.\n", dbname);
                 }
+                if (check == -2) {
+                    printf("\nNo open db file.\n");
+                }
                 break;
             }
             case 'i': {
+                scanf (" %s %s", fname, objname);
+                check = import (&fp, fname, objname);
+                if (check == 0) {
+                    printf("\nFile %s not found.\n", fname);
+                }
+                if (check == -1) {
+                    printf("\nNo open db file.\n");
+                }
                 break;
             }
             case 'f': {
@@ -46,6 +57,15 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'c': {
+                check =  close (&fp);
+                if (check == -1) {
+                    printf("\nNo open db file.\n");
+                }
+                #ifdef DEBUG
+                else {
+                    printf("\nCLEAR OK\n");
+                }
+                #endif
                 break;
             }
             case 'q': {

@@ -4,7 +4,7 @@
 #include <string.h>
 #define DB_ERROR -1;
 #define MN_SIZE 4
-#define DEBUG
+//#define DEBUG
 
 // Validation of DB
 // Checks the Existance of Magic Number
@@ -48,36 +48,35 @@ int metadata (FILE **fp) {
 // Return DB_ERROR(-1) -> Error Opening db
 // Return 0 -> Invalid db
 // Return 1 -> OK
-int open (FILE *fp, char dbname[]) {
+int open (FILE **fp, char dbname[]) {
     int check;
+    
     // Close any pre-existing open file
-    if (fp != NULL && ftell(fp) >= 0) {
-       fclose(fp);
+    if (*fp != NULL && ftell(*fp) >= 0) {
+       close(&(*fp));
     }
-    fp = fopen(dbname, "r+");
+    *fp = fopen(dbname, "r+");
     // A file, with same name, already exists
-    if (fp != NULL) {
-        check = DbValid(fp);
-        if (!check) {
-            #ifdef DEBUG
-                fprintf(stderr, "\nExists. Its not a DB\n");
-            #endif
-            return 0;
+    if (*fp != NULL) {
+        check = DbValid(*fp);
+        // Its db
+        if (check) {
+            return 1;
         }
-        #ifdef DEBUG
-            fprintf(stderr, "\nExists. Its a DB\n");
-        #endif
+        // Its not db
+        close(&(*fp));
+        return 0;
     }
-    // Open new DB
+    // Open new db
     else {
-        fp = fopen(dbname, "w+");
-        if (ferror(fp)) {
+        *fp = fopen(dbname, "w+");
+        if (ferror(*fp)) {
             #ifdef DEBUG
                 fprintf(stderr, "\nNew DB. Error in opening:\nFunction: %s\nLine: %d\n", __func__, __LINE__); 
             #endif
             return DB_ERROR;
         }
-        check = metadata(&fp);
+        check = metadata(&(*fp));
         if (!check) {
             #ifdef DEBUG
                 fprintf(stderr, "\nNew DB. Error in Metadata:\nFunction: %s\nLine: %d\n", __func__, __LINE__); 
@@ -85,5 +84,30 @@ int open (FILE *fp, char dbname[]) {
             return DB_ERROR;
         }
     }
+    return 1;
+}
+// Return -1 -> No db
+// Return 0 -> No fname
+int import (FILE **fp, char fname[], char objname[]) {
+    FILE *op;
+    // No open db
+    if (*fp == NULL) {
+        return DB_ERROR;
+    }
+    op = fopen (fname, "r");
+    // No existing file
+    if (op == NULL ) {
+        return 0;
+    }
+    return 1;
+}
+// Return DB_ERROR(-1) -> No open DB
+// Return 1 -> OK
+int close(FILE **fp) {
+    if (*fp == NULL) {
+        return DB_ERROR;
+    }
+    fclose(*fp);
+    *fp = NULL;
     return 1;
 }
