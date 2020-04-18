@@ -7,7 +7,7 @@
 #define DB_ERROR -1
 #define YES 1
 #define NO 0
-
+#define DEBUG
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN];
@@ -21,6 +21,14 @@ int main (int argc, char *argv[]) {
                 check = open (dbname);
                 if (check == -1) {
                     printf("\nError opening %s.\n", dbname);
+                }
+                #ifdef DEBUG
+                    if (check == 1) {
+                        printf("\nBASE OK\n");
+                    }
+                #endif
+                if (check == 0) {
+                    printf("\nInvalid db file %s.\n", dbname);
                 }
                 break;
             }
