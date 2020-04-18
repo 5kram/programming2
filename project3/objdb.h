@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 int main (int argc, char *argv[]);
-int open(char dbname[]);
+int open(FILE *fp, char dbname[]);
 int metadata(FILE **fp);
 
 #endif

@@ -12,13 +12,14 @@
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN];
     int check;
+    FILE *fp = NULL;
 
     do {
         scanf(" %c", &option);
         switch(option) {
             case 'o': {
                 scanf("%s", dbname);
-                check = open (dbname);
+                check = open (fp, dbname);
                 if (check == -1) {
                     printf("\nError opening %s.\n", dbname);
                 }

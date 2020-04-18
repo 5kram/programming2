@@ -48,10 +48,12 @@ int metadata (FILE **fp) {
 // Return DB_ERROR(-1) -> Error Opening db
 // Return 0 -> Invalid db
 // Return 1 -> OK
-int open (char dbname[]) {
-    FILE *fp;
+int open (FILE *fp, char dbname[]) {
     int check;
-
+    // Close any pre-existing open file
+    if (fp != NULL && ftell(fp) >= 0) {
+       fclose(fp);
+    }
     fp = fopen(dbname, "r+");
     // A file, with same name, already exists
     if (fp != NULL) {
