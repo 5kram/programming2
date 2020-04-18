@@ -1,0 +1,29 @@
+o test4_db1
+i 13B.txt 13
+i 3.5MB.tiff 35
+i 512B.pgm 512
+i Hello.pdf Hello
+i 512B.pgm 512b
+i 13B.txt 13b
+i 3.5MB.tiff 35b
+i 512B.pgm 512c 
+d 13 
+f *
+d 512c
+f *
+d 35b
+f *
+d 512b
+f *
+d hello
+f *
+d Hello
+f *
+d 35
+f *
+d 13b
+f * 
+d 512
+f *
+d 512
+q

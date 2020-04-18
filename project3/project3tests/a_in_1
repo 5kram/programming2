@@ -1,0 +1,8 @@
+i sth sth
+o test1_db1
+c
+i sth sth
+c
+o test1_no_db
+c
+q

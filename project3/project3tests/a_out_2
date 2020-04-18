@@ -1,0 +1,51 @@
+
+File non_existent_file not found.
+
+##
+small_text_file_of_just_13_bytes
+image_of_3.5MB.tiff
+exact_512_bytes
+midsize_pdf_file
+
+##
+small_text_file_of_just_13_bytes
+exact_512_bytes
+
+##
+small_text_file_of_just_13_bytes
+midsize_pdf_file
+
+##
+
+Object image_of_3.5MB.tiff already in db.
+
+##
+small_text_file_of_just_13_bytes
+image_of_3.5MB.tiff
+exact_512_bytes
+midsize_pdf_file
+exact_512
+13
+35MB
+
+No open db file.
+
+No open db file.
+
+##
+hello
+Hello
+512
+3.5
+13
+13B
+
+##
+Hello
+
+##
+512
+13
+13B
+
+##

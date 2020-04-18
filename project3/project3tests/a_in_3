@@ -1,0 +1,18 @@
+o test3_db1
+i 13B.txt 13
+i 3.5MB.tiff 35
+i 512B.pgm 512
+i Hello.pdf Hello
+i 512B.pgm 512b
+i 13B.txt 13b
+i 3.5MB.tiff 35b
+i 512 512c 
+i 512B.pgm 512d
+e 13 test3_03
+e 35 test3_35
+e Hello test3_Hello
+e 35b test3_35b
+e 13b test3_13b
+e 512c test3_512c
+e 512b test3_512b
+q

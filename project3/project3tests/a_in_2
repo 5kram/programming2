@@ -1,0 +1,30 @@
+o test2_db1
+i 13B.txt small_text_file_of_just_13_bytes
+i 3.5MB.tiff image_of_3.5MB.tiff
+i 512B.pgm exact_512_bytes
+i Hello.pdf midsize_pdf_file
+i non_existent_file haha
+f *
+f bytes
+f file
+f xx
+i 512B.pgm image_of_3.5MB.tiff
+i 512B.pgm exact_512
+i 13B.txt 13
+i 3.5MB.tiff 35MB
+f *
+c 
+i 13B.txt 13
+f *
+o test2_db2
+i Hello.pdf hello
+i Hello.pdf Hello
+i 512B.pgm 512
+i 3.5MB.tiff 3.5
+i 13B.txt 13
+i 13B.txt 13B
+f *
+f H
+f 1
+f 130
+q

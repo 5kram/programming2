@@ -1,0 +1,38 @@
+o test5_db1
+i 13B.txt 13
+i 3.5MB.tiff 35
+i Hello.pdf Hello
+i 512B.pgm 512b
+i 512B.pgm 512
+i 13B.txt 13b
+i 3.5MB.tiff 35b
+i 512B.pgm 512c 
+d 13 
+d 512c
+d 35b
+d 512b
+e Hello test5_hello
+d 35
+f *
+i test5_Hello hello
+f *
+i test5_hello hello2
+f *
+d 512
+d hello2
+f *
+e 13b test5_13b
+d 13b
+i test5_13b 13c
+d Hello
+f *
+d 13c
+f *
+i test5_hello hello
+f *
+i 512B.pgm 512
+d hello
+i test5_13b 13
+d 512
+f 1
+q
