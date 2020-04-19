@@ -5,7 +5,7 @@
 #define DB_ERROR -1;
 #define MN_SIZE 4
 #define BLOCK 512
-//#define DEBUG
+#define DEBUG
 
 // Validation of DB
 // Checks the Existance of Magic Number
@@ -141,7 +141,10 @@ int import (FILE **fp, char fname[], char objname[]) {
     if (check) {
         return -2;
     }
-    fseek(*fp, MN_SIZE, SEEK_SET);
+    fseek(*fp, 0, SEEK_END);
+    #ifdef DEBUG
+        fprintf(stderr, "\n%ld\n", ftell(*fp)); 
+    #endif
     check = move_block (&(*fp), &op, objname);
 
 
