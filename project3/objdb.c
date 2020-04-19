@@ -66,20 +66,16 @@ int move_block (FILE **fp, FILE **op, char objname[]) {
     objsize = ftell (*op);
     fseek(*op, 0, SEEK_SET);
     // Move bytes
-    if (objsize < BLOCK) {
-        fread(buffer, objsize, 1, *op);
-        fwrite(buffer, objsize, 1, *fp);
+    // if objsize < BLOCK, doesnt loop
+    repeats = objsize / BLOCK;
+    remain = objsize % BLOCK;
+    for (i = 0; i < repeats; i++) {
+        fread(buffer, BLOCK, 1, *op);
+        fwrite(buffer, BLOCK, 1, *fp);
     }
-    else {
-        repeats = objsize / BLOCK;
-        remain = objsize % BLOCK;
-        for (i = 0; i < repeats; i++) {
-            fread(buffer, BLOCK, 1, *op);
-            fwrite(buffer, BLOCK, 1, *fp);
-        }
-        fread(buffer, remain, 1, *op);
-        fwrite(buffer, remain, 1, *fp);
-    }
+    fread(buffer, remain, 1, *op);
+    fwrite(buffer, remain, 1, *fp);
+    fclose(*op);
 
     return 1;
 }
