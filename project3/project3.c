@@ -2,7 +2,6 @@
 // Through Binary Files
 #include <stdio.h>
 #include "objdb.h"
-#define BLOCK 512
 #define NAME_LEN 255
 #define DB_ERROR -1
 #define YES 1
@@ -44,6 +43,9 @@ int main (int argc, char *argv[]) {
                 }
                 if (check == -1) {
                     printf("\nNo open db file.\n");
+                }
+                if (check == -2) {
+                    printf("\nObject %s already in db.\n", objname);
                 }
                 break;
             }
