@@ -6,8 +6,23 @@
 #define MN_SIZE 4
 #define BLOCK 512
 #define NAME_LEN 255
-#define DEBUG
+//#define DEBUG
 
+// Return DB_ERROR(-1) -> No open DB
+// Return 1 -> OK
+int close(FILE **fp) {
+    if (*fp == NULL) {
+        return DB_ERROR;
+    }
+    fclose(*fp);
+    *fp = NULL;
+    return 1;
+}
+void fexit (FILE **fp,const char func[],const int line) {
+    fprintf(stderr, "\nError in function: %s\nLine: %d\n", func, line);
+    close(&(*fp));
+    EXIT_FAILURE;
+} 
 // Validation of DB
 // Checks the Existance of Magic Number
 // Returns 0 -> Not Valid
@@ -18,10 +33,7 @@ int DbValid(FILE *fp) {
     fseek(fp, 0, SEEK_SET);
     for (i = 0; i < MN_SIZE; i++) {
         if (fread(&buf[i], 1, 1, fp) != 1) {
-            #ifdef DEBUG
-                fprintf(stderr, "\nFunction: %s\nLine: %d\n", __func__, __LINE__);
-            #endif
-            return 0;
+            fexit(&fp, __func__, __LINE__);
         }
     }
     for (i = 0; i < MN_SIZE; i++) {
@@ -39,49 +51,58 @@ int metadata (FILE **fp) {
     
     for (i = 0; i < MN_SIZE + 1; i++) {
         if (fwrite(&val[i], 1, 1, *fp) != 1) {
-            #ifdef DEBUG
-                fprintf(stderr, "\nFunction: %s\nLine: %d\n", __func__, __LINE__); 
-            #endif
-            return 0;
+            fexit(&(*fp), __func__, __LINE__);
         }
         fflush(*fp);
     }   
     return 1;
 }
-// Return 1 -> End of file
-// Return 0 -> Not end of file
+// Return 0 -> End of file
+// Return 1 -> Not end of file
 int fend (FILE **fp) {
-    fseek(*fp, 1, SEEK_CUR);
     #ifdef DEBUG
         fprintf(stderr, "\nEnd: %ld? Function: %s, Line: %d\n", ftell(*fp), __func__, __LINE__); 
     #endif
-    if (feof(*fp)) {
-        return 1;
+    if (getc(*fp) == EOF) {
+        return 0;
     }
     fseek(*fp, -1, SEEK_CUR);
-    return 0;
+    #ifdef DEBUG
+        fprintf(stderr, "\nNo End: %ld Function: %s, Line: %d\n", ftell(*fp), __func__, __LINE__); 
+    #endif
+    return 1;
 }
+
 // Return 1 -> name exists in db
 // Rerurn 0 -> name doesnt exist in db
+// Return -1(DB_ERROR) -> 
 // fp in correct position
 int find_name (FILE **fp, char name[]) {
     int objnamelen = 0, objsize = 0;
     char objname[NAME_LEN] = {0};
 
     fseek(*fp, MN_SIZE + 1, SEEK_SET);
-    do {    
-        fread(&objnamelen, sizeof(int), 1, *fp);
-        fread(objname, sizeof(char), objnamelen, *fp);
+    while (fend(&(*fp))) {
+        objname[1] = '\0';
+        if (fread(&objnamelen, sizeof(int), 1, *fp) != 1) {
+            fexit(&(*fp), __func__, __LINE__);
+        }
+        if (fread(objname, sizeof(char), objnamelen, *fp) != objnamelen) {
+            fexit(&(*fp), __func__, __LINE__);
+        }
+        objname[objnamelen] = '\0';
         #ifdef DEBUG
             fprintf(stderr, "\n%d, %s, Function: %s, Line: %d\n", objnamelen, objname, __func__, __LINE__); 
         #endif
         if (!strcmp(name, objname)) {
             return 1;
         }
-        fread(&objsize, sizeof(int), 1, *fp);
+        
+        if (fread(&objsize, sizeof(int), 1, *fp) != 1 ) {
+            fexit(&(*fp), __func__, __LINE__);
+        }
         fseek(*fp, objsize, SEEK_CUR);
     }
-    while (fend(&(*fp)));
 
     return 0;
 }
@@ -96,12 +117,21 @@ int move_block (FILE **fp, FILE **op, char objname[]) {
     // Inserts objs info into data
     // Size of name + name + size of obj
     namelen = strlen(objname);
-    fwrite(&namelen, sizeof(int), 1, *fp);
-    fwrite(objname, sizeof(char), namelen, *fp);
+    if (fwrite(&namelen, sizeof(int), 1, *fp) != 1) {
+        fexit(&(*fp), __func__, __LINE__);
+    }
+    fflush(*fp);
+    if (fwrite(objname, sizeof(char), namelen, *fp) != namelen) {
+        fexit(&(*fp), __func__, __LINE__);
+    }
+    fflush(*fp);
     fseek(*op, 0, SEEK_END);
     objsize = ftell (*op);
     fseek(*op, 0, SEEK_SET);
-    fwrite(&objsize, sizeof(int), 1, *fp);
+    if (fwrite(&objsize, sizeof(int), 1, *fp) != 1) {
+       fexit(&(*fp), __func__, __LINE__);
+    }
+    fflush(*fp);
     #ifdef DEBUG
         fprintf(stderr, "\n%d, %s, %d, Function: %s, Line: %d\n", namelen, objname, objsize, __func__, __LINE__); 
     #endif
@@ -110,13 +140,24 @@ int move_block (FILE **fp, FILE **op, char objname[]) {
     repeats = objsize / BLOCK;
     remain = objsize % BLOCK;
     for (i = 0; i < repeats; i++) {
-        fread(buffer, BLOCK, 1, *op);
-        fwrite(buffer, BLOCK, 1, *fp);
+        if (fread(buffer, BLOCK, 1, *op) !=  1) {
+            fexit(&(*op), __func__, __LINE__);
+        }
+        if (fwrite(buffer, BLOCK, 1, *fp) != 1) {
+            fexit(&(*fp), __func__, __LINE__);
+        }
+        fflush(*fp);
     }
-    fread(buffer, remain, 1, *op);
-    fwrite(buffer, remain, 1, *fp);
+    if (remain != 0) {
+        if (fread(buffer, remain, 1, *op) != 1) {
+            fexit(&(*op), __func__, __LINE__);
+        }
+        if (fwrite(buffer, remain, 1, *fp) != 1) {
+            fexit(&(*fp), __func__, __LINE__);
+        }
+    }
     fclose(*op);
-
+    
     return 1;
 }
 
@@ -176,25 +217,11 @@ int import (FILE **fp, char fname[], char objname[]) {
     if (op == NULL ) {
         return 0;
     }
-     
     check = find_name (&(*fp), objname);
     if (check) {
         return -2;
     }
-    
     check = move_block (&(*fp), &op, objname);
 
-
-
-    return 1;
-}
-// Return DB_ERROR(-1) -> No open DB
-// Return 1 -> OK
-int close(FILE **fp) {
-    if (*fp == NULL) {
-        return DB_ERROR;
-    }
-    fclose(*fp);
-    *fp = NULL;
     return 1;
 }
