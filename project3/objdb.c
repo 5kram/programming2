@@ -5,6 +5,7 @@
 #define DB_ERROR -1;
 #define MN_SIZE 4
 #define BLOCK 512
+#define NAME_LEN 255
 #define DEBUG
 
 // Validation of DB
@@ -47,16 +48,51 @@ int metadata (FILE **fp) {
     }   
     return 1;
 }
+// Return 1 -> End of file
+// Return 0 -> Not end of file
+int fend (FILE **fp) {
+    fseek(*fp, 1, SEEK_CUR);
+    #ifdef DEBUG
+        fprintf(stderr, "\nEnd: %ld? Function: %s, Line: %d\n", ftell(*fp), __func__, __LINE__); 
+    #endif
+    if (feof(*fp)) {
+        return 1;
+    }
+    fseek(*fp, -1, SEEK_CUR);
+    return 0;
+}
 // Return 1 -> name exists in db
 // Rerurn 0 -> name doesnt exist in db
-int find_name (FILE **fp, char objname[]) {
+// fp in correct position
+int find_name (FILE **fp, char name[]) {
+    int objnamelen = 0, objsize = 0;
+    char objname[NAME_LEN] = {0};
+
+    fseek(*fp, MN_SIZE + 1, SEEK_SET);
+    do {    
+        fread(&objnamelen, sizeof(int), 1, *fp);
+        fread(objname, sizeof(char), objnamelen, *fp);
+        #ifdef DEBUG
+            fprintf(stderr, "\n%d, %s, Function: %s, Line: %d\n", objnamelen, objname, __func__, __LINE__); 
+        #endif
+        if (!strcmp(name, objname)) {
+            return 1;
+        }
+        fread(&objsize, sizeof(int), 1, *fp);
+        fseek(*fp, objsize, SEEK_CUR);
+    }
+    while (fend(&(*fp)));
 
     return 0;
 }
-// fp already in correct position
+// fp in correct position
 int move_block (FILE **fp, FILE **op, char objname[]) {
     char buffer[BLOCK] = {0};
     int namelen = 0, objsize = 0, repeats = 0, remain = 0, i;
+    fseek(*fp, 0, SEEK_END);
+    #ifdef DEBUG
+        fprintf(stderr, "\nImport in end: %ld, Function: %s, Line: %d\n", ftell(*fp), __func__, __LINE__); 
+    #endif
     // Inserts objs info into data
     // Size of name + name + size of obj
     namelen = strlen(objname);
@@ -65,6 +101,10 @@ int move_block (FILE **fp, FILE **op, char objname[]) {
     fseek(*op, 0, SEEK_END);
     objsize = ftell (*op);
     fseek(*op, 0, SEEK_SET);
+    fwrite(&objsize, sizeof(int), 1, *fp);
+    #ifdef DEBUG
+        fprintf(stderr, "\n%d, %s, %d, Function: %s, Line: %d\n", namelen, objname, objsize, __func__, __LINE__); 
+    #endif
     // Move bytes
     // if objsize < BLOCK, doesnt loop
     repeats = objsize / BLOCK;
@@ -136,15 +176,12 @@ int import (FILE **fp, char fname[], char objname[]) {
     if (op == NULL ) {
         return 0;
     }
-
+     
     check = find_name (&(*fp), objname);
     if (check) {
         return -2;
     }
-    fseek(*fp, 0, SEEK_END);
-    #ifdef DEBUG
-        fprintf(stderr, "\n%ld\n", ftell(*fp)); 
-    #endif
+    
     check = move_block (&(*fp), &op, objname);
 
 
