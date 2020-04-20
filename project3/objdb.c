@@ -72,18 +72,11 @@ int fend (FILE **fp) {
     #endif
     return 1;
 }
-int find (FILE **fp, char name[]) {
-
-    return find_name (&(*fp), name);
-}
-// Return 1 -> name exists in db
-// Rerurn 0 -> name doesnt exist in db
-// Return -1(DB_ERROR) -> 
-// fp in correct position
-int find_name (FILE **fp, char name[]) {
-    int objnamelen = 0, objsize = 0;
+// arr[i] = (int *)malloc(c * sizeof(int)); 
+void find (FILE **fp, char name[], int **fp_array) {
+    int objnamelen = 0, objsize = 0, i = 0;
     char objname[NAME_LEN] = {0};
-
+    
     fseek(*fp, MN_SIZE + 1, SEEK_SET);
     while (fend(&(*fp))) {
         objname[1] = '\0';
@@ -94,11 +87,46 @@ int find_name (FILE **fp, char name[]) {
             fexit(&(*fp), __func__, __LINE__);
         }
         objname[objnamelen] = '\0';
+        if (strstr (objname, name) != NULL) {
+            fseek(*fp, - (1 + objnamelen), SEEK_CUR);
+            fp_array[i] = (int *)malloc(sizeof(int));
+            fp_array[i] = (int*)(*fp);
+            i++;
+            fseek(*fp, (1 + objnamelen), SEEK_CUR);
+        }
+        if (fread(&objsize, sizeof(int), 1, *fp) != 1 ) {
+            fexit(&(*fp), __func__, __LINE__);
+        }
+        fseek(*fp, objsize, SEEK_CUR);       
+    }
+    fp_array[i] = (int *)malloc(sizeof(int));
+    fp_array[i] = NULL;
+    return ;
+}
+// Return 1 -> name exists in db
+// Rerurn 0 -> name doesnt exist in db
+// fp in correct position
+// Option 0 -> Called by find func
+// Option 1 -> Calles by other func
+int find_name (FILE **fp, char name[], int option) {
+    int objnamelen = 0, objsize = 0;
+    char objname[NAME_LEN] = {0};
+
+    fseek(*fp, MN_SIZE + 1, SEEK_SET);
+    while (fend(&(*fp))) {
+        objname[1] = '\0';
+        if (fread(&objnamelen, sizeof(int), 1, *fp) != 1) {
+            fexit(&(*fp), __func__, __LINE__);
+        }
+        if (fread(objname, sizeof(char), objnamelen, *fp) != objnamelen) {
+            fprintf(stderr, "%d %s", objnamelen, objname);
+            fexit(&(*fp), __func__, __LINE__);
+        }
+        objname[objnamelen] = '\0';
         #ifdef DEBUG
             fprintf(stderr, "\n%d, %s, Function: %s, Line: %d\n", objnamelen, objname, __func__, __LINE__); 
         #endif
-        if (!strcmp(name, objname)) {
-            fseek (*fp, -1 - objnamelen, SEEK_CUR);
+        if (option && !strcmp(name, objname)) {
             return 1;
         }
         
@@ -159,8 +187,8 @@ int move_block (FILE **fp, FILE **op, char objname[]) {
         if (fwrite(buffer, remain, 1, *fp) != 1) {
             fexit(&(*fp), __func__, __LINE__);
         }
+        fflush(*fp);
     }
-    fclose(*op);
     
     return 1;
 }
@@ -219,13 +247,15 @@ int import (FILE **fp, char fname[], char objname[]) {
     op = fopen (fname, "rb");
     // No existing file
     if (op == NULL ) {
+        fclose(op);
         return 0;
     }
-    check = find_name (&(*fp), objname);
+    check = find_name (&(*fp), objname, 1);
     if (check) {
+        fclose(op);
         return -2;
     }
     check = move_block (&(*fp), &op, objname);
-
+    fclose(op);
     return 1;
 }
