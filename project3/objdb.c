@@ -72,7 +72,10 @@ int fend (FILE **fp) {
     #endif
     return 1;
 }
+int find (FILE **fp, char name[]) {
 
+    return find_name (&(*fp), name);
+}
 // Return 1 -> name exists in db
 // Rerurn 0 -> name doesnt exist in db
 // Return -1(DB_ERROR) -> 
@@ -95,6 +98,7 @@ int find_name (FILE **fp, char name[]) {
             fprintf(stderr, "\n%d, %s, Function: %s, Line: %d\n", objnamelen, objname, __func__, __LINE__); 
         #endif
         if (!strcmp(name, objname)) {
+            fseek (*fp, -1 - objnamelen, SEEK_CUR);
             return 1;
         }
         
