@@ -89,7 +89,8 @@ void find (FILE **fp, char name[], int **fp_array) {
         objname[objnamelen] = '\0';
         if (strstr (objname, name) != NULL) {
             fseek(*fp, - (1 + objnamelen), SEEK_CUR);
-            fp_array[i] = (int *)malloc(sizeof(int));
+            //fp_array[i] = (int *)malloc(sizeof(int));
+            fprintf(stderr, "%d, %s\n", objnamelen, objname);
             fp_array[i] = (int*)(*fp);
             i++;
             fseek(*fp, (1 + objnamelen), SEEK_CUR);
@@ -99,7 +100,7 @@ void find (FILE **fp, char name[], int **fp_array) {
         }
         fseek(*fp, objsize, SEEK_CUR);       
     }
-    fp_array[i] = (int *)malloc(sizeof(int));
+    //fp_array[i] = (int *)malloc(sizeof(int));
     fp_array[i] = NULL;
     return ;
 }
