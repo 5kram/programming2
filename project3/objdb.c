@@ -73,9 +73,10 @@ int fend (FILE **fp) {
     return 1;
 }
 // arr[i] = (int *)malloc(c * sizeof(int)); 
-void find (FILE **fp, char name[], int **fp_array) {
-    int objnamelen = 0, objsize = 0, i = 0;
+int **find (FILE **fp, char name[]) {
+    int objnamelen = 0, objsize = 0, i = 0, j = 0, **names;
     char objname[NAME_LEN] = {0};
+    
     
     fseek(*fp, MN_SIZE + 1, SEEK_SET);
     while (fend(&(*fp))) {
@@ -88,12 +89,14 @@ void find (FILE **fp, char name[], int **fp_array) {
         }
         objname[objnamelen] = '\0';
         if (strstr (objname, name) != NULL) {
-            fseek(*fp, - (1 + objnamelen), SEEK_CUR);
+            fseek(*fp, - (objnamelen), SEEK_CUR);
             //fp_array[i] = (int *)malloc(sizeof(int));
             fprintf(stderr, "%d, %s\n", objnamelen, objname);
-            fp_array[i] = (int*)(*fp);
+            /*
+            CODE
+            */
             i++;
-            fseek(*fp, (1 + objnamelen), SEEK_CUR);
+            fseek(*fp, (objnamelen), SEEK_CUR);
         }
         if (fread(&objsize, sizeof(int), 1, *fp) != 1 ) {
             fexit(&(*fp), __func__, __LINE__);
@@ -101,8 +104,8 @@ void find (FILE **fp, char name[], int **fp_array) {
         fseek(*fp, objsize, SEEK_CUR);       
     }
     //fp_array[i] = (int *)malloc(sizeof(int));
-    fp_array[i] = NULL;
-    return ;
+   
+    return names;
 }
 // Return 1 -> name exists in db
 // Rerurn 0 -> name doesnt exist in db

@@ -2,6 +2,7 @@
 // Through Binary Files
 #include <stdio.h>
 #include "objdb.h"
+#include <stdlib.h>
 #define NAME_LEN 255
 #define DB_ERROR -1
 #define YES 1
@@ -9,10 +10,10 @@
 //#define DEBUG
 
 int main (int argc, char *argv[]) {
-    char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN];
-    int check;
+    char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
+    int check, i;
     FILE *fp = NULL;
-
+    int **names = NULL;
     do {
         scanf(" %c", &option);
         switch(option) {
@@ -50,6 +51,12 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'f': {
+                scanf(" %s", name);
+                names = find (&fp, name);
+                printf("\n##\n");
+                /*
+                PRINT
+                */
                 break;
             }
             case 'e': {
@@ -71,6 +78,8 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'q': {
+                //free(fp_array);
+                close(&fp);
                 return 0;
             }
             default : {
