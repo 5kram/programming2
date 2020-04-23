@@ -11,7 +11,7 @@
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
-    int check, i;
+    int check;
     FILE *fp = NULL;
     int **names = NULL;
     do {
@@ -38,7 +38,7 @@ int main (int argc, char *argv[]) {
             }
             case 'i': {
                 scanf (" %s %s", fname, objname);
-                check = import (&fp, fname, objname);
+                check = import (fp, fname, objname);
                 if (check == 0) {
                     printf("\nFile %s not found.\n", fname);
                 }
@@ -52,7 +52,7 @@ int main (int argc, char *argv[]) {
             }
             case 'f': {
                 scanf(" %s", name);
-                names = find (&fp, name);
+                names = find (fp, name);
                 printf("\n##\n");
                 /*
                 PRINT
@@ -66,7 +66,7 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'c': {
-                check =  close (&fp);
+                check =  close (fp);
                 if (check == -1) {
                     printf("\nNo open db file.\n");
                 }
@@ -79,7 +79,7 @@ int main (int argc, char *argv[]) {
             }
             case 'q': {
                 //free(fp_array);
-                close(&fp);
+                close(fp);
                 return 0;
             }
             default : {

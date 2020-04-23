@@ -10,30 +10,31 @@
 
 // Return DB_ERROR(-1) -> No open DB
 // Return 1 -> OK
-int close(FILE **fp) {
-    if (*fp == NULL) {
+int close(FILE *fp) {
+    if (fp == NULL) {
         return DB_ERROR;
     }
-    fclose(*fp);
-    *fp = NULL;
+    fclose(fp);
     return 1;
 }
-void fexit (FILE **fp,const char func[],const int line) {
+
+void fexit(FILE *fp, const char func[], const int line) {
     fprintf(stderr, "\nError in function: %s\nLine: %d\n", func, line);
-    close(&(*fp));
+    close(fp);
     EXIT_FAILURE;
-} 
+}
+
 // Validation of DB
 // Checks the Existance of Magic Number
 // Returns 0 -> Not Valid
 // Returns 1 -> Valid
-int DbValid(FILE *fp) {
+int db_valid(FILE *fp) {
     int i, val[] = {218, 122, 186, 83}, buf[MN_SIZE] = {0};
     
     fseek(fp, 0, SEEK_SET);
     for (i = 0; i < MN_SIZE; i++) {
         if (fread(&buf[i], 1, 1, fp) != 1) {
-            fexit(&fp, __func__, __LINE__);
+            fexit(fp, __func__, __LINE__);
         }
     }
     for (i = 0; i < MN_SIZE; i++) {
@@ -43,65 +44,69 @@ int DbValid(FILE *fp) {
     }
     return 1;
 }
+
 // Metadata Insertion
 // Return 0 -> ERROR
 // Return 1 -> OK
-int metadata (FILE **fp) {
+int metadata (FILE *fp) {
     int i, val[] = {218, 122, 186, 83};
     
     for (i = 0; i < MN_SIZE + 1; i++) {
-        if (fwrite(&val[i], 1, 1, *fp) != 1) {
-            fexit(&(*fp), __func__, __LINE__);
+        if (fwrite(&val[i], 1, 1, fp) != 1) {
+            fexit(fp, __func__, __LINE__);
         }
-        fflush(*fp);
+        fflush(fp);
     }   
     return 1;
 }
+
 // Return 0 -> End of file
 // Return 1 -> Not end of file
-int fend (FILE **fp) {
+int fend (FILE *fp) {
     #ifdef DEBUG
-        fprintf(stderr, "\nEnd: %ld? Function: %s, Line: %d\n", ftell(*fp), __func__, __LINE__); 
+        fprintf(stderr, "\nEnd: %ld? Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
     #endif
-    if (getc(*fp) == EOF) {
+    if (getc(fp) == EOF) {
         return 0;
     }
-    fseek(*fp, -1, SEEK_CUR);
+    fseek(fp, -1, SEEK_CUR);
     #ifdef DEBUG
-        fprintf(stderr, "\nNo End: %ld Function: %s, Line: %d\n", ftell(*fp), __func__, __LINE__); 
+        fprintf(stderr, "\nNo End: %ld Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
     #endif
     return 1;
 }
+
 // arr[i] = (int *)malloc(c * sizeof(int)); 
-int **find (FILE **fp, char name[]) {
-    int objnamelen = 0, objsize = 0, i = 0, j = 0, **names;
+int **find (FILE *fp, char name[]) {
+    int objnamelen = 0, objsize = 0, i = 0, **names = NULL;
+
     char objname[NAME_LEN] = {0};
     
     
-    fseek(*fp, MN_SIZE + 1, SEEK_SET);
-    while (fend(&(*fp))) {
+    fseek(fp, MN_SIZE + 1, SEEK_SET);
+    while (fend(fp)) {
         objname[1] = '\0';
-        if (fread(&objnamelen, sizeof(int), 1, *fp) != 1) {
-            fexit(&(*fp), __func__, __LINE__);
+        if (fread(&objnamelen, sizeof(int), 1, fp) != 1) {
+            fexit(fp, __func__, __LINE__);
         }
-        if (fread(objname, sizeof(char), objnamelen, *fp) != objnamelen) {
-            fexit(&(*fp), __func__, __LINE__);
+        if (fread(objname, sizeof(char), objnamelen, fp) != objnamelen) {
+            fexit(fp, __func__, __LINE__);
         }
         objname[objnamelen] = '\0';
         if (strstr (objname, name) != NULL) {
-            fseek(*fp, - (objnamelen), SEEK_CUR);
+            fseek(fp, - (objnamelen), SEEK_CUR);
             //fp_array[i] = (int *)malloc(sizeof(int));
             fprintf(stderr, "%d, %s\n", objnamelen, objname);
             /*
             CODE
             */
             i++;
-            fseek(*fp, (objnamelen), SEEK_CUR);
+            fseek(fp, (objnamelen), SEEK_CUR);
         }
-        if (fread(&objsize, sizeof(int), 1, *fp) != 1 ) {
-            fexit(&(*fp), __func__, __LINE__);
+        if (fread(&objsize, sizeof(int), 1, fp) != 1 ) {
+            fexit(fp, __func__, __LINE__);
         }
-        fseek(*fp, objsize, SEEK_CUR);       
+        fseek(fp, objsize, SEEK_CUR);
     }
     //fp_array[i] = (int *)malloc(sizeof(int));
    
@@ -112,19 +117,19 @@ int **find (FILE **fp, char name[]) {
 // fp in correct position
 // Option 0 -> Called by find func
 // Option 1 -> Calles by other func
-int find_name (FILE **fp, char name[], int option) {
+int find_name (FILE *fp, char name[], int option) {
     int objnamelen = 0, objsize = 0;
     char objname[NAME_LEN] = {0};
 
-    fseek(*fp, MN_SIZE + 1, SEEK_SET);
-    while (fend(&(*fp))) {
+    fseek(fp, MN_SIZE + 1, SEEK_SET);
+    while (fend(fp)) {
         objname[1] = '\0';
-        if (fread(&objnamelen, sizeof(int), 1, *fp) != 1) {
-            fexit(&(*fp), __func__, __LINE__);
+        if (fread(&objnamelen, sizeof(int), 1, fp) != 1) {
+            fexit(fp, __func__, __LINE__);
         }
-        if (fread(objname, sizeof(char), objnamelen, *fp) != objnamelen) {
+        if (fread(objname, sizeof(char), objnamelen, fp) != objnamelen) {
             fprintf(stderr, "%d %s", objnamelen, objname);
-            fexit(&(*fp), __func__, __LINE__);
+            fexit(fp, __func__, __LINE__);
         }
         objname[objnamelen] = '\0';
         #ifdef DEBUG
@@ -134,40 +139,40 @@ int find_name (FILE **fp, char name[], int option) {
             return 1;
         }
         
-        if (fread(&objsize, sizeof(int), 1, *fp) != 1 ) {
-            fexit(&(*fp), __func__, __LINE__);
+        if (fread(&objsize, sizeof(int), 1, fp) != 1 ) {
+            fexit(fp, __func__, __LINE__);
         }
-        fseek(*fp, objsize, SEEK_CUR);
+        fseek(fp, objsize, SEEK_CUR);
     }
 
     return 0;
 }
 // fp in correct position
-int move_block (FILE **fp, FILE **op, char objname[]) {
+int move_block (FILE *fp, FILE *op, char objname[]) {
     char buffer[BLOCK] = {0};
     int namelen = 0, objsize = 0, repeats = 0, remain = 0, i;
-    fseek(*fp, 0, SEEK_END);
+    fseek(fp, 0, SEEK_END);
     #ifdef DEBUG
-        fprintf(stderr, "\nImport in end: %ld, Function: %s, Line: %d\n", ftell(*fp), __func__, __LINE__); 
+        fprintf(stderr, "\nImport in end: %ld, Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
     #endif
     // Inserts objs info into data
     // Size of name + name + size of obj
     namelen = strlen(objname);
-    if (fwrite(&namelen, sizeof(int), 1, *fp) != 1) {
-        fexit(&(*fp), __func__, __LINE__);
+    if (fwrite(&namelen, sizeof(int), 1, fp) != 1) {
+        fexit(fp, __func__, __LINE__);
     }
-    fflush(*fp);
-    if (fwrite(objname, sizeof(char), namelen, *fp) != namelen) {
-        fexit(&(*fp), __func__, __LINE__);
+    fflush(fp);
+    if (fwrite(objname, sizeof(char), namelen, fp) != namelen) {
+        fexit(fp, __func__, __LINE__);
     }
-    fflush(*fp);
-    fseek(*op, 0, SEEK_END);
-    objsize = ftell (*op);
-    fseek(*op, 0, SEEK_SET);
-    if (fwrite(&objsize, sizeof(int), 1, *fp) != 1) {
-       fexit(&(*fp), __func__, __LINE__);
+    fflush(fp);
+    fseek(op, 0, SEEK_END);
+    objsize = ftell (op);
+    fseek(op, 0, SEEK_SET);
+    if (fwrite(&objsize, sizeof(int), 1, fp) != 1) {
+       fexit(fp, __func__, __LINE__);
     }
-    fflush(*fp);
+    fflush(fp);
     #ifdef DEBUG
         fprintf(stderr, "\n%d, %s, %d, Function: %s, Line: %d\n", namelen, objname, objsize, __func__, __LINE__); 
     #endif
@@ -176,47 +181,49 @@ int move_block (FILE **fp, FILE **op, char objname[]) {
     repeats = objsize / BLOCK;
     remain = objsize % BLOCK;
     for (i = 0; i < repeats; i++) {
-        if (fread(buffer, BLOCK, 1, *op) !=  1) {
-            fexit(&(*op), __func__, __LINE__);
+        if (fread(buffer, BLOCK, 1, op) !=  1) {
+            fexit(op, __func__, __LINE__);
         }
-        if (fwrite(buffer, BLOCK, 1, *fp) != 1) {
-            fexit(&(*fp), __func__, __LINE__);
+        if (fwrite(buffer, BLOCK, 1, fp) != 1) {
+            fexit(fp, __func__, __LINE__);
         }
-        fflush(*fp);
+        fflush(fp);
     }
     if (remain != 0) {
-        if (fread(buffer, remain, 1, *op) != 1) {
-            fexit(&(*op), __func__, __LINE__);
+        if (fread(buffer, remain, 1, op) != 1) {
+            fexit(op, __func__, __LINE__);
         }
-        if (fwrite(buffer, remain, 1, *fp) != 1) {
-            fexit(&(*fp), __func__, __LINE__);
+        if (fwrite(buffer, remain, 1, fp) != 1) {
+            fexit(fp, __func__, __LINE__);
         }
-        fflush(*fp);
+        fflush(fp);
     }
     
     return 1;
 }
 
-// Return DB_ERROR(-1) -> Error Opening db
-// Return 0 -> Invalid db
-// Return 1 -> OK
+/*
+ * Return DB_ERROR(-1) -> Error Opening db
+ * Return 0 -> Invalid db
+ * Return 1 -> OK
+ */
 int open (FILE **fp, char dbname[]) {
     int check;
     
     // Close any pre-existing open file
     if (*fp != NULL && ftell(*fp) >= 0) {
-       close(&(*fp));
+       close(*fp);
     }
     *fp = fopen(dbname, "rb+");
     // A file, with same name, already exists
     if (*fp != NULL) {
-        check = DbValid(*fp);
+        check = db_valid(*fp);
         // Its db
         if (check) {
             return 1;
         }
         // Its not db
-        close(&(*fp));
+        close(*fp);
         return 0;
     }
     // Open new db
@@ -228,7 +235,7 @@ int open (FILE **fp, char dbname[]) {
             #endif
             return DB_ERROR;
         }
-        check = metadata(&(*fp));
+        check = metadata(*fp);
         if (!check) {
             #ifdef DEBUG
                 fprintf(stderr, "\nNew DB. Error in Metadata:\nFunction: %s\nLine: %d\n", __func__, __LINE__); 
@@ -238,14 +245,17 @@ int open (FILE **fp, char dbname[]) {
     }
     return 1;
 }
-// Return -1 -> No db
-// Return 0 -> No fname
-// Return -2 -> Object name already in db
-int import (FILE **fp, char fname[], char objname[]) {
+
+/*
+ * Return -1 -> No db
+ * Return 0 -> No fname
+ * Return -2 -> Object name already in db
+ */
+int import (FILE *fp, char fname[], char objname[]) {
     FILE *op;
     int check;
     // No open db
-    if (*fp == NULL) {
+    if (fp == NULL) {
         return DB_ERROR;
     }
     op = fopen (fname, "rb");
@@ -254,12 +264,12 @@ int import (FILE **fp, char fname[], char objname[]) {
         fclose(op);
         return 0;
     }
-    check = find_name (&(*fp), objname, 1);
+    check = find_name (fp, objname, 1);
     if (check) {
         fclose(op);
         return -2;
     }
-    check = move_block (&(*fp), &op, objname);
+    check = move_block(fp, op, objname);
     fclose(op);
     return 1;
 }
