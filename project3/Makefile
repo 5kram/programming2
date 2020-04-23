@@ -13,4 +13,4 @@ objdb.o: objdb.c objdb.h
 
 .PHONY: clean
 clean:
-	rm -f *.o
+	rm -f *.o project3
