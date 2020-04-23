@@ -15,4 +15,10 @@ int move_block(FILE *fp, FILE *op, char objname[]);
 int import(FILE *fp, char fname[], char objname[]);
 int close(FILE *fp);
 
+typedef struct {
+    unsigned int num_results;
+    unsigned int *names;
+    char *names_buffer;
+} FindResult;
+
 #endif

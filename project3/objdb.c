@@ -89,11 +89,15 @@ int fend (FILE *fp) {
 /*
  * TODO documentation *
  */
-int **find(FILE *fp, char name[]) {
+FindResult *find(FILE *fp, char name[]) {
     unsigned int objnamelen = 0, objsize = 0;
-    int **names = NULL;
-
     char objname[NAME_LEN] = {0};
+    unsigned int num_results = 0;
+    unsigned int *names = NULL;
+    size_t names_len = 0;
+    char *names_buffer = NULL;
+    unsigned int last_empty_name = 0;
+    size_t names_buffer_len = 0;
 
     fseek(fp, MN_SIZE, SEEK_SET);
     while (fend(fp)) {
@@ -120,6 +124,30 @@ int **find(FILE *fp, char name[]) {
             fprintf(stderr, "%d, %s\n", objnamelen, objname);
 
 /*            fseek(fp, (objnamelen), SEEK_CUR); */
+
+            /* Check if we have space in the names array */
+            if ((names_len / sizeof(unsigned int)) == num_results) {
+                // Hack to handle the first allocation
+                if (names_len == 0) {
+                    names_len = 10;
+                }
+                // Double names array
+                names = realloc(names, names_len * 2)
+            }
+
+            /* TODO check if we have enough space in names_buffer to store `objnamelen` bytes, if not reallocate
+             * like names, double on each realloc
+             * */
+            /*if (names_buffer_len)*/
+
+            /* TODO copy objname to names_buffer, create offset in names, increment num_results*/
+            /*
+             * names_buffer = [13b \0 __13b__ \0 cool_13b \0 . . . . . . ]
+             * names = [      0^,    4^,       12^] those are integer offsets
+             *
+             * for example if you want the __13b__ name (index '1') you do:
+             *      char *name = names_buffer + names[1]; // it's like doing `names_buffer + 4`
+             * */
         }
 
         /* Skip the actual object */
@@ -129,9 +157,20 @@ int **find(FILE *fp, char name[]) {
         fseek(fp, objsize, SEEK_CUR);
     }
 
+
+    /* TODO create */
+    FindResult *result = malloc(sizeof(FindResult));
+    result->num_results = num_results;
+    result->names = names;
+    result->names_buffer = names_buffer;
    
-    return names;
+    return result;
 }
+
+void delete_find_result(FindResult *result) {
+    /* TODO free*/
+}
+
 /*
  * Return 1 -> name exists in db
  * Return 0 -> name doesn't exist in db
