@@ -1,5 +1,5 @@
 CC = gcc 
-CCFLAGS = -Wall -g
+CCFLAGS = -Wall -g -std=c89
 OBJ = project3.o objdb.o 
 
 project3: $(OBJ)

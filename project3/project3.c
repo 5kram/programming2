@@ -1,5 +1,5 @@
-// Database With Digital Objects
-// Through Binary Files
+/* Database With Digital Objects */
+/* Through Binary Files */
 #include <stdio.h>
 #include "objdb.h"
 #include <stdlib.h>
@@ -7,7 +7,7 @@
 #define DB_ERROR -1
 #define YES 1
 #define NO 0
-//#define DEBUG
+#define DEBUG
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
@@ -19,7 +19,7 @@ int main (int argc, char *argv[]) {
         switch(option) {
             case 'o': {
                 scanf("%s", dbname);
-                check = open (&fp, dbname);
+                check = open(&fp, dbname);
                 if (check == -1) {
                     printf("\nError opening %s.\n", dbname);
                 }
@@ -38,7 +38,7 @@ int main (int argc, char *argv[]) {
             }
             case 'i': {
                 scanf (" %s %s", fname, objname);
-                check = import (fp, fname, objname);
+                check = import(fp, fname, objname);
                 if (check == 0) {
                     printf("\nFile %s not found.\n", fname);
                 }
@@ -52,7 +52,7 @@ int main (int argc, char *argv[]) {
             }
             case 'f': {
                 scanf(" %s", name);
-                names = find (fp, name);
+                names = find(fp, name);
                 printf("\n##\n");
                 /*
                 PRINT
@@ -78,7 +78,7 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'q': {
-                //free(fp_array);
+                /*free(fp_array); */
                 close(fp);
                 return 0;
             }
