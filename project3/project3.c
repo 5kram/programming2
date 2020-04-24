@@ -13,7 +13,7 @@ int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
     int check;
     FILE *fp = NULL;
-    int **names = NULL;
+    FindResult *result;
     do {
         scanf(" %c", &option);
         switch(option) {
@@ -52,7 +52,7 @@ int main (int argc, char *argv[]) {
             }
             case 'f': {
                 scanf(" %s", name);
-                names = find(fp, name);
+                result = find(fp, name);
                 printf("\n##\n");
                 /*
                 PRINT
