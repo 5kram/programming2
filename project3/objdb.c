@@ -127,12 +127,12 @@ FindResult *find(FILE *fp, char name[]) {
 
             /* Check if we have space in the names array */
             if ((names_len / sizeof(unsigned int)) == num_results) {
-                // Hack to handle the first allocation
+                /* Hack to handle the first allocation */
                 if (names_len == 0) {
                     names_len = 10;
                 }
-                // Double names array
-                names = realloc(names, names_len * 2)
+                /* Double names array */
+                names = realloc(names, names_len * 2);
             }
 
             /* TODO check if we have enough space in names_buffer to store `objnamelen` bytes, if not reallocate
