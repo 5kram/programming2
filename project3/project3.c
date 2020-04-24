@@ -11,7 +11,7 @@
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
-    int check;
+    int check, i;
     FILE *fp = NULL;
     FindResult *result;
     do {
@@ -54,9 +54,10 @@ int main (int argc, char *argv[]) {
                 scanf(" %s", name);
                 result = find(fp, name);
                 printf("\n##\n");
-                /*
-                PRINT
-                */
+                for (i = 0; i < result->num_results; i++) {
+                    printf("%s\n", result->names_buffer);
+                }
+                deleteResult(result);
                 break;
             }
             case 'e': {
