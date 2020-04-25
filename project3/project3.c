@@ -7,7 +7,7 @@
 #define DB_ERROR -1
 #define YES 1
 #define NO 0
-#define DEBUG
+/*#define DEBUG*/
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
@@ -77,7 +77,7 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'c': {
-                check =  close (fp);
+                check =  close (&fp);
                 if (check == -1) {
                     printf("\nNo open db file.\n");
                 }
@@ -90,7 +90,7 @@ int main (int argc, char *argv[]) {
             }
             case 'q': {
                 /*free(fp_array); */
-                close(fp);
+                close(&fp);
                 return 0;
             }
             default : {
