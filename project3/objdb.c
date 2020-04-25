@@ -147,12 +147,14 @@ FindResult *find(FILE *fp, char name[]) {
              * names_buffer_len increased by objnamelen + 1 each time a name is stored
              * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              * */
+            
             if (1) {
                 if (names_buffer_len == 0) {
                     names_buffer_len = 10;
                 }
                 names_buffer = realloc(names_buffer, names_buffer_len * 2);
             } 
+            
             /* TODO copy objname to names_buffer, create offset in names, increment num_results*/
             /*
              * names_buffer = [13b \0 __13b__ \0 cool_13b \0 . . . . . . ]
@@ -188,19 +190,24 @@ FindResult *find(FILE *fp, char name[]) {
     fprintf(stderr, "names_buffer: %s names[1]: %d\n", names_buffer, names[1]);
     */
     /* TODO create */
+    
     result->names_buffer = malloc(sizeof(names_buffer));
+    
     result->num_results = num_results;
     /*result->names = names;*/
     result->names_buffer = names_buffer; 
     /*if(num_results != 0) {
         free(names);
         free(names_buffer);
-    }*/
+    }
+    free(names_buffer);
+    */
     return result;
 }
 
 void deleteResult(FindResult *result) {
     /* TODO free*/
+   
     free(result);
 }
 
