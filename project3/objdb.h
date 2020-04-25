@@ -20,7 +20,7 @@ void deleteResult(FindResult *result);
 int find_name(FILE *fp, char objname[], int option);
 int move_block(FILE *fp, FILE *op, char objname[]);
 int import(FILE *fp, char fname[], char objname[]);
-int close(FILE *fp);
+int close(FILE **fp);
 
 
 #endif
