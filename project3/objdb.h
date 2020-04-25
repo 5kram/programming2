@@ -6,7 +6,7 @@
 
 typedef struct {
     unsigned int num_results;
-    unsigned int *names;
+    char *names;
     char *names_buffer;
 } FindResult;
 
