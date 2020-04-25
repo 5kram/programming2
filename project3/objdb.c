@@ -12,17 +12,19 @@
  * Return DB_ERROR(-1) -> No open DB
  * Return 1 -> OK
  */
-int close(FILE *fp) {
-    if (fp == NULL) {
+int close(FILE **fp) {
+    if (*fp == NULL) {
         return DB_ERROR;
     }
-    fclose(fp);
+    fclose(*fp);
+    *fp = NULL;
+   
     return 1;
 }
 
 void fexit(FILE *fp, const char func[], const int line) {
     fprintf(stderr, "\nError in function: %s\nLine: %d\n", func, line);
-    close(fp);
+    close(&fp);
     EXIT_FAILURE;
 }
 
@@ -130,8 +132,9 @@ FindResult *find(FILE *fp, char name[]) {
         /* If name is contained in this object name */
         if (strstr (objname, name) != NULL) {
             /* fp_array[i] = (int *)malloc(sizeof(int)); */
+            #ifdef DEBUG
             fprintf(stderr, "%d, %s\n", objnamelen, objname);
-
+            #endif
 
             /* Check if we have space in the names array */
             if ((names_len) == num_results) {
@@ -152,7 +155,7 @@ FindResult *find(FILE *fp, char name[]) {
                 if (names_buffer_len == 0) {
                     names_buffer_len = 10;
                 }
-                names_buffer = realloc(names_buffer, names_buffer_len * 2);
+                names_buffer = realloc(names_buffer, names_buffer_len * 10);
             } 
             
             /* TODO copy objname to names_buffer, create offset in names, increment num_results*/
@@ -174,8 +177,9 @@ FindResult *find(FILE *fp, char name[]) {
             names_buffer[names_len - 1] = ' ';
             
             
-            
+            #ifdef DEBUG
             fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
+            #endif
             num_results++;
             /*names_len++;*/
         }
@@ -325,7 +329,7 @@ int open(FILE **fp, char dbname[]) {
     
     /* Close any pre-existing open file */
     if (*fp != NULL && ftell(*fp) >= 0) {
-       close(*fp);
+       close(&(*fp));
     }
     /* Try to open file */
     *fp = fopen(dbname, "rb+");
@@ -344,7 +348,7 @@ int open(FILE **fp, char dbname[]) {
             #ifdef DEBUG
                 fprintf(stderr, "\nNew DB. Error in Metadata:\nFunction: %s\nLine: %d\n", __func__, __LINE__);
             #endif
-            close(*fp);
+            close(&(*fp));
             return DB_ERROR;
         }
     }
@@ -354,7 +358,7 @@ int open(FILE **fp, char dbname[]) {
     if (check) {
         return 1;
     } else { /* Its not db */
-        close(*fp);
+        close(&(*fp));
         return 0;
     }
 }
@@ -367,24 +371,24 @@ int open(FILE **fp, char dbname[]) {
 int import(FILE *fp, char fname[], char objname[]) {
     FILE *op;
     int check;
-    fprintf(stderr, "\nImport Function: %s, Line: %d\n", fname, __LINE__);
+
     /* No open db */
     if (fp == NULL) {
         return DB_ERROR;
     }
-    fprintf(stderr, "\nImport Function: %s, Line: %d\n", fname, __LINE__);
+
     op = fopen(fname, "rb");
     /* No existing file */
     if (op == NULL ) {
         return 0;
     }
-    fprintf(stderr, "\nImport Function: %s, Line: %d\n", fname, __LINE__);
+
     check = find_name(fp, objname, 1);
     if (check) {
         fclose(op);
         return -2;
     }
-    fprintf(stderr, "\nImport Function: %s, Line: %d\n", fname, __LINE__);
+
     check = move_block(fp, op, objname);
     fclose(op);
     return 1;
