@@ -94,11 +94,12 @@ FindResult *find(FILE *fp, char name[]) {
     char objname[NAME_LEN] = {0};
     unsigned int num_results = 0;
     unsigned int *names = NULL;
-    size_t names_len = 0;
+    unsigned int names_len = 0;
     char *names_buffer = NULL;
     names = (unsigned int*)names_buffer;
     /* unsigned int last_empty_name = 0; */
-    size_t names_buffer_len = 0;
+    unsigned int names_buffer_len = 0;
+    
     FindResult *result = (FindResult*)malloc(sizeof(FindResult));
     fseek(fp, MN_SIZE, SEEK_SET);
     while (fend(fp)) {
@@ -125,19 +126,18 @@ FindResult *find(FILE *fp, char name[]) {
 
 
             /* Check if we have space in the names array */
-            if ((names_len / sizeof(unsigned int)) == num_results) {
+            if ((names_len) == num_results) {
                 /* Hack to handle the first allocation */
-                if (names_len == 0) {
-                    names_len = 10;
-                }
+                
 
                 /* Double names array */
-                names = realloc(names, names_len * 2);
+                names = realloc(names, names_len + 10);
             }
 
             /* TODO check if we have enough space in names_buffer to store `objnamelen` bytes, if not reallocate
              * like names, double on each realloc
              * names_buffer_len increased by objnamelen + 1 each time a name is stored
+             * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
              * */
             if (1) {
                 if (names_buffer_len == 0) {
@@ -153,14 +153,17 @@ FindResult *find(FILE *fp, char name[]) {
              * for example if you want the __13b__ name (index '1') you do:
              *      char *name = names_buffer + names[1]; // it's like doing `names_buffer + 4`
              * */
-            
+            /* names_len ok
+             * names_buffer ok
+             * names_buffer_len nok
+             * names nok
+             * */ 
             strcat(names_buffer, objname);
-           /* names[num_results] = (int*)(names_buffer + names_buffer_len);*/
-            names_buffer_len = names_buffer_len + objnamelen + 1;
-
-           
-            names_buffer[names_buffer_len] = '\0';
-            fprintf(stderr, "names_buffer: %s names[%d]: %d, names_len: %ld\n", names_buffer, num_results, names[num_results], names_len);
+            names_len = names_len + objnamelen + 1;
+            names[num_results] = names_buffer[names_len];
+            
+            
+            fprintf(stderr, "names_buffer: %s &names[%d]: %s, names_len: %d\n", names_buffer, num_results, (char*)names[num_results], names_len);
             num_results++;
             names_len++;
         }
