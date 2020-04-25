@@ -93,10 +93,18 @@ FindResult *find(FILE *fp, char name[]) {
     unsigned int objnamelen = 0, objsize = 0;
     char objname[NAME_LEN] = {0};
     unsigned int num_results = 0;
-    unsigned int *names = NULL;
+    /*char *names = NULL;
+    while(*ch) {
+     putchar(*ch);
+     ch++;
+  }
+    
+    
+    */
     unsigned int names_len = 0;
     char *names_buffer = NULL;
-    names = (unsigned int*)names_buffer;
+    /*names = (char*)malloc(sizeof(char));
+    names = &names_buffer[0];*/
     /* unsigned int last_empty_name = 0; */
     unsigned int names_buffer_len = 0;
     
@@ -131,9 +139,9 @@ FindResult *find(FILE *fp, char name[]) {
                 
 
                 /* Double names array */
-                names = realloc(names, names_len + 10);
+              /*  names = realloc(names, names_len + 10);*/
             }
-
+            
             /* TODO check if we have enough space in names_buffer to store `objnamelen` bytes, if not reallocate
              * like names, double on each realloc
              * names_buffer_len increased by objnamelen + 1 each time a name is stored
@@ -158,14 +166,16 @@ FindResult *find(FILE *fp, char name[]) {
              * names_buffer_len nok
              * names nok
              * */ 
+            
             strcat(names_buffer, objname);
             names_len = names_len + objnamelen + 1;
-            names[num_results] = names_buffer[names_len];
+            names_buffer[names_len - 1] = ' ';
             
             
-            fprintf(stderr, "names_buffer: %s &names[%d]: %s, names_len: %d\n", names_buffer, num_results, (char*)names[num_results], names_len);
+            
+            fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
             num_results++;
-            names_len++;
+            /*names_len++;*/
         }
 
         /* Skip the actual object */
@@ -180,7 +190,7 @@ FindResult *find(FILE *fp, char name[]) {
     /* TODO create */
     result->names_buffer = malloc(sizeof(names_buffer));
     result->num_results = num_results;
-    result->names = names;
+    /*result->names = names;*/
     result->names_buffer = names_buffer; 
     /*if(num_results != 0) {
         free(names);
