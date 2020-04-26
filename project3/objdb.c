@@ -126,7 +126,7 @@ FindResult *find(FILE *fp, char name[]) {
         /* If name is contained in this object name */
         if (strstr (objname, name) != NULL) {
             #ifdef DEBUG
-            fprintf(stderr, "%d, %s\n", objnamelen, objname);
+            fprintf(stderr, "objnamelen: %d, objname: %s\n", objnamelen, objname);
             #endif
             
             /* Check if there is enough space in names_buffer to store `objnamelen` + 1 bytes, if not reallocate
