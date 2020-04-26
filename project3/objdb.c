@@ -137,14 +137,26 @@ FindResult *find(FILE *fp, char name[]) {
                 if (names_buffer_len == 0) {
                     names_buffer_len = 10;
                 }
-                names_buffer = realloc(names_buffer, names_buffer_len * 10);
+                names_buffer = realloc(names_buffer, names_buffer_len + 100);
             } 
             
             /* Copy objname to names_buffer, create offset in names, increment num_results*/
             if (num_results == 0) {
                 names_buffer[0] = '\0';
-            }
+            }/*
             strncat(names_buffer, objname, objnamelen);
+            */
+           int i = 0;
+            do{
+            
+                    names_buffer[names_len + i]=objname[i];
+                    
+                    fprintf(stderr, "objname[]: %c && names_buffer[]: %c\n", objname[i], names_buffer[names_len + i]);
+                
+            i++;
+            }while (objname[i] != '\0');
+
+            /**names_buffer='\0';*/
             names_len = names_len + objnamelen + 1;
             names_buffer[names_len - 1] = ' ';
             
@@ -185,6 +197,7 @@ void deleteResult(FindResult *result) {
 
 /*
  *  !!! Merge with find !!!
+ *       When fixed
  * Return 1 -> name exists in db
  * Return 0 -> name doesn't exist in db
  * fp in correct position
