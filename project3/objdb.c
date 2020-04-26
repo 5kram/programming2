@@ -6,7 +6,7 @@
 #define MN_SIZE 4
 #define BLOCK 512
 #define NAME_LEN 256
-/*#define DEBUG */
+#define DEBUG
 
 /*
  * Return DB_ERROR(-1) -> No open DB
@@ -23,7 +23,9 @@ int close(FILE **fp) {
 }
 
 void fexit(FILE *fp, const char func[], const int line) {
-    fprintf(stderr, "\nError in function: %s\nLine: %d\n", func, line);
+    #ifdef DEBUG
+        fprintf(stderr, "\nError in function: %s\nLine: %d\n", func, line);
+    #endif
     close(&fp);
     EXIT_FAILURE;
 }
@@ -83,39 +85,31 @@ int fend (FILE *fp) {
     }
     fseek(fp, -1, SEEK_CUR);
     #ifdef DEBUG
-        fprintf(stderr, "\nNo End: %ld Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
+        fprintf(stderr, "\nNot the End: %ld Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
     #endif
     return 1;
 }
 
 /*
- * TODO documentation *
+ * Returns struct with object names
+ * Format [name1(space)name2(space)]
+ * Return num_results = 1 if there isnt open db
  */
 FindResult *find(FILE *fp, char name[]) {
-    unsigned int objnamelen = 0, objsize = 0;
-    char objname[NAME_LEN] = {0};
-    unsigned int num_results = 0;
-    /*char *names = NULL;
-    while(*ch) {
-     putchar(*ch);
-     ch++;
-  }
+    int objnamelen = 0, objsize = 0, names_len = 0, names_buffer_len = 0, num_results = 0;
+    char objname[NAME_LEN] = {0}, *names_buffer = NULL;
     
-    
-    */
-    unsigned int names_len = 0;
-    char *names_buffer = NULL;
-    /*names = (char*)malloc(sizeof(char));
-    names = &names_buffer[0];*/
-    /* unsigned int last_empty_name = 0; */
-    unsigned int names_buffer_len = 0;
     
     FindResult *result = (FindResult*)malloc(sizeof(FindResult));
+    /* Check if there is open db */
+    if (fp == NULL) {
+        result->num_results = -1;
+        return result;
+    }
     fseek(fp, MN_SIZE, SEEK_SET);
     while (fend(fp)) {
         objname[0] = '\0';
-        /* TODO discuss integer endian format */
-        if (fread(&objnamelen, sizeof(unsigned int), 1, fp) != 1) {
+        if (fread(&objnamelen, sizeof(int), 1, fp) != 1) {
             fexit(fp, __func__, __LINE__);
         }
 
@@ -131,26 +125,14 @@ FindResult *find(FILE *fp, char name[]) {
 
         /* If name is contained in this object name */
         if (strstr (objname, name) != NULL) {
-            /* fp_array[i] = (int *)malloc(sizeof(int)); */
             #ifdef DEBUG
             fprintf(stderr, "%d, %s\n", objnamelen, objname);
             #endif
-
-            /* Check if we have space in the names array */
-            if ((names_len) == num_results) {
-                /* Hack to handle the first allocation */
-                
-
-                /* Double names array */
-              /*  names = realloc(names, names_len + 10);*/
-            }
             
-            /* TODO check if we have enough space in names_buffer to store `objnamelen` bytes, if not reallocate
-             * like names, double on each realloc
+            /* Check if there is enough space in names_buffer to store `objnamelen` + 1 bytes, if not reallocate
              * names_buffer_len increased by objnamelen + 1 each time a name is stored
-             * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+             * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Needs fixing
              * */
-            
             if (1) {
                 if (names_buffer_len == 0) {
                     names_buffer_len = 10;
@@ -158,64 +140,51 @@ FindResult *find(FILE *fp, char name[]) {
                 names_buffer = realloc(names_buffer, names_buffer_len * 10);
             } 
             
-            /* TODO copy objname to names_buffer, create offset in names, increment num_results*/
-            /*
-             * names_buffer = [13b \0 __13b__ \0 cool_13b \0 . . . . . . ]
-             * names = [      0^,    4^,       12^] those are integer offsets
-             *
-             * for example if you want the __13b__ name (index '1') you do:
-             *      char *name = names_buffer + names[1]; // it's like doing `names_buffer + 4`
-             * */
-            /* names_len ok
-             * names_buffer ok
-             * names_buffer_len nok
-             * names nok
-             * */ 
-            
-            strcat(names_buffer, objname);
+            /* Copy objname to names_buffer, create offset in names, increment num_results*/
+            if (num_results == 0) {
+                names_buffer[0] = '\0';
+            }
+            strncat(names_buffer, objname, objnamelen);
             names_len = names_len + objnamelen + 1;
             names_buffer[names_len - 1] = ' ';
             
-            
             #ifdef DEBUG
-            fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
+                fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
             #endif
             num_results++;
-            /*names_len++;*/
         }
 
         /* Skip the actual object */
-        if (fread(&objsize, sizeof(unsigned int), 1, fp) != 1 ) {
+        if (fread(&objsize, sizeof(int), 1, fp) != 1 ) {
             fexit(fp, __func__, __LINE__);
         }
         fseek(fp, objsize, SEEK_CUR);
     }
-    /*
-    fprintf(stderr, "names_buffer: %s names[1]: %d\n", names_buffer, names[1]);
-    */
-    /* TODO create */
     
+    if (num_results == 0) {
+         names_buffer = realloc(names_buffer, 10);
+         names_buffer[0] = ' ';
+    }
+    #ifdef DEBUG
+            fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
+    #endif
     result->names_buffer = malloc(sizeof(names_buffer));
-    
     result->num_results = num_results;
-    /*result->names = names;*/
     result->names_buffer = names_buffer; 
-    /*if(num_results != 0) {
-        free(names);
+    /*
+    if(num_results != 0) {
         free(names_buffer);
     }
-    free(names_buffer);
     */
     return result;
 }
 
 void deleteResult(FindResult *result) {
-    /* TODO free*/
-   
     free(result);
 }
 
 /*
+ *  !!! Merge with find !!!
  * Return 1 -> name exists in db
  * Return 0 -> name doesn't exist in db
  * fp in correct position
@@ -264,6 +233,7 @@ int find_name(FILE *fp, char name[], int option) {
 }
 /*
  * fp in correct position
+ * Documentation
  */
 int move_block (FILE *fp, FILE *op, char objname[]) {
     char buffer[BLOCK] = {0};
