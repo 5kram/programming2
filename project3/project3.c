@@ -53,6 +53,10 @@ int main (int argc, char *argv[]) {
             case 'f': {
                 scanf(" %s", name);
                 result = find(fp, name);
+                if (result->num_results == -1) {
+                    printf("\nNo open db file.\n");
+                    break;
+                }
                 i = 0;
                 printf("\n##\n");
                 while(i < result->num_results) {
@@ -63,10 +67,7 @@ int main (int argc, char *argv[]) {
                     }
                     putchar(*result->names_buffer);
                     result->names_buffer++;
-                }/*
-                for (i = 0; i < result->num_results; i++) {
-                    printf("%s\n", result->names_buffer);
-                }*/
+                }
                 deleteResult(result);
                 break;
             }
@@ -83,13 +84,12 @@ int main (int argc, char *argv[]) {
                 }
                 #ifdef DEBUG
                 else {
-                    printf("\nCLEAR OK\n");
+                    printf("\nCLOSE OK\n");
                 }
                 #endif
                 break;
             }
             case 'q': {
-                /*free(fp_array); */
                 close(&fp);
                 return 0;
             }
