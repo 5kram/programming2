@@ -5,8 +5,7 @@
 #include <stdio.h>
 
 typedef struct {
-    unsigned int num_results;
-    char *names;
+    int num_results;
     char *names_buffer;
 } FindResult;
 
