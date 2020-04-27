@@ -7,6 +7,8 @@
 #define DB_ERROR -1
 #define YES 1
 #define NO 0
+#define IMPORT 0
+#define FIND 1
 /*#define DEBUG*/
 
 int main (int argc, char *argv[]) {
@@ -52,7 +54,7 @@ int main (int argc, char *argv[]) {
             }
             case 'f': {
                 scanf(" %s", name);
-                result = find(fp, name);
+                result = find(fp, name, FIND);
                 if (result->num_results == -1) {
                     printf("\nNo open db file.\n");
                     break;
