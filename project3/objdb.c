@@ -141,19 +141,18 @@ FindResult *find(FILE *fp, char name[]) {
             } 
             
             /* Copy objname to names_buffer, create offset in names, increment num_results*/
+            /*
             if (num_results == 0) {
                 names_buffer[0] = '\0';
-            }/*
-            strncat(names_buffer, objname, objnamelen);
+            }
             */
-           int i = 0;
+            int i = 0;
             do{
-            
-                    names_buffer[names_len + i]=objname[i];
-                    
+                names_buffer[names_len + i]=objname[i];
+                #ifdef DEBUG
                     fprintf(stderr, "objname[]: %c && names_buffer[]: %c\n", objname[i], names_buffer[names_len + i]);
-                
-            i++;
+                #endif
+                i++;
             }while (objname[i] != '\0');
 
             /**names_buffer='\0';*/
@@ -177,12 +176,16 @@ FindResult *find(FILE *fp, char name[]) {
          names_buffer = realloc(names_buffer, 10);
          names_buffer[0] = ' ';
     }
+    else {
+        names_buffer[names_len] = '\0';
+    }
     #ifdef DEBUG
             fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
     #endif
     result->names_buffer = malloc(sizeof(names_buffer));
     result->num_results = num_results;
     result->names_buffer = names_buffer; 
+    result->names_len = names_len;
     /*
     if(num_results != 0) {
         free(names_buffer);
