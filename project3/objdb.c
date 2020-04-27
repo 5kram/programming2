@@ -137,24 +137,18 @@ FindResult *find(FILE *fp, char name[]) {
             names_buffer = realloc(names_buffer, names_buffer_len);
             
             /* Copy objname to names_buffer, create offset in names, increment num_results*/
-            /*
-            if (num_results == 0) {
-                names_buffer[0] = '\0';
-            }
-            */
             int i = 0;
-            do{
-                names_buffer[names_len + i]=objname[i];
+            do {
+                names_buffer[names_len + i] = objname[i];
                 #ifdef DEBUG
                     fprintf(stderr, "objname[]: %c && names_buffer[]: %c\n", objname[i], names_buffer[names_len + i]);
                 #endif
                 i++;
-            }while (objname[i] != '\0');
+            }
+            while (objname[i] != '\0');
 
-            /**names_buffer='\0';*/
             names_len = names_len + objnamelen + 1;
             names_buffer[names_len - 1] = ' ';
-            
             #ifdef DEBUG
                 fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
             #endif
@@ -191,6 +185,7 @@ FindResult *find(FILE *fp, char name[]) {
 }
 
 void deleteResult(FindResult *result) {
+    free(result->names_buffer);
     free(result);
 }
 
@@ -224,7 +219,9 @@ int find_name(FILE *fp, char name[], int option) {
         }
 
         if (fread(objname, sizeof(char), objnamelen, fp) != objnamelen) {
-            fprintf(stderr, "Unexpected object %s size %d", objname, objnamelen);
+            #ifdef DEBUG
+                fprintf(stderr, "Unexpected object %s size %d", objname, objnamelen);
+            #endif
             fexit(fp, __func__, __LINE__);
         }
         objname[objnamelen] = '\0';
@@ -234,7 +231,6 @@ int find_name(FILE *fp, char name[], int option) {
         if (option && !strcmp(name, objname)) {
             return 1;
         }
-        
         if (fread(&objsize, sizeof(int), 1, fp) != 1 ) {
             fexit(fp, __func__, __LINE__);
         }
