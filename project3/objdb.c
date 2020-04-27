@@ -96,7 +96,7 @@ int fend (FILE *fp) {
  * Return num_results = 1 if there isnt open db
  */
 FindResult *find(FILE *fp, char name[]) {
-    int objnamelen = 0, objsize = 0, names_len = 0, names_buffer_len = 0, num_results = 0;
+    int objnamelen = 0, objsize = 0, names_len = 0, names_buffer_len = 100, num_results = 0;
     char objname[NAME_LEN] = {0}, *names_buffer = NULL;
     
     
@@ -133,12 +133,8 @@ FindResult *find(FILE *fp, char name[]) {
              * names_buffer_len increased by objnamelen + 1 each time a name is stored
              * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Needs fixing
              * */
-            if (1) {
-                if (names_buffer_len == 0) {
-                    names_buffer_len = 10;
-                }
-                names_buffer = realloc(names_buffer, names_buffer_len + 100);
-            } 
+            names_buffer_len = names_buffer_len + objnamelen + 1;
+            names_buffer = realloc(names_buffer, names_buffer_len);
             
             /* Copy objname to names_buffer, create offset in names, increment num_results*/
             /*
