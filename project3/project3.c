@@ -11,7 +11,7 @@
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
-    int check, i = 0;
+    int check, i = 0, num = 0;
     FILE *fp = NULL;
     FindResult *result;
     do {
@@ -59,14 +59,14 @@ int main (int argc, char *argv[]) {
                 }
                 i = 0;
                 printf("\n##\n");
-                while(i < result->num_results) {
-                    if(*result->names_buffer == ' ') {
+                while(num < result->num_results || i < result->names_len) {
+                    if(result->names_buffer[i] == ' ') {
                         printf("\n");
-                        result->names_buffer++;
                         i++;
+                        num++;
                     }
-                    putchar(*result->names_buffer);
-                    result->names_buffer++;
+                    putchar(result->names_buffer[i]);
+                    i++;
                 }
                 deleteResult(result);
                 break;
