@@ -7,6 +7,7 @@
 typedef struct {
     int num_results;
     char *names_buffer;
+    int names_len;
 } FindResult;
 
 int main(int argc, char *argv[]);
