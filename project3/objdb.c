@@ -6,7 +6,7 @@
 #define MN_SIZE 4
 #define BLOCK 512
 #define NAME_LEN 256
-#define DEBUG
+/*#define DEBUG*/
 
 /*
  * Return DB_ERROR(-1) -> No open DB
@@ -124,7 +124,7 @@ FindResult *find(FILE *fp, char name[]) {
         objname[objnamelen] = '\0';
 
         /* If name is contained in this object name */
-        if (strstr (objname, name) != NULL) {
+        if (strstr (objname, name) != NULL || strcmp(name, "*") == 0) {
             #ifdef DEBUG
             fprintf(stderr, "objnamelen: %d, objname: %s\n", objnamelen, objname);
             #endif
