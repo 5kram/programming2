@@ -131,8 +131,7 @@ FindResult *find(FILE *fp, char name[], int called_by) {
                 #endif
                 
                 /* Reallocate space in names_buffer to store `objnamelen` + 1 bytes.
-                 * names_buffer_len increased by objnamelen + 1 each time a name is stored.
-                 */
+                 * names_buffer_len increased by objnamelen + 1 each time a name is stored. */
                 names_buffer_len = names_buffer_len + objnamelen + 1;
                 names_buffer = realloc(names_buffer, names_buffer_len);
                 
@@ -167,6 +166,12 @@ FindResult *find(FILE *fp, char name[], int called_by) {
         }
         fseek(fp, objsize, SEEK_CUR);
     }
+    /* If called by import and havent found that exact name in the database.
+     * Return num_results = 0. */
+    if (called_by == IMPORT) {
+        result->num_results = num_results;
+        return result;
+    }
     /* Create names_buffer offset. */
     if (num_results == 0) {
         names_buffer = realloc(names_buffer, 10);
@@ -179,20 +184,23 @@ FindResult *find(FILE *fp, char name[], int called_by) {
     #ifdef DEBUG
             fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
     #endif
-    /* Fill the struct with data, that been computed above. */ 
-    result->names_buffer = (char*)malloc(names_len);
+    /* Fill the struct with data, that been computed above. */
+    result->names_buffer = (char*)malloc(names_len + 1);
     result->num_results = num_results;
     memcpy(result->names_buffer, names_buffer, names_len);
     result->names_len = names_len;
     result->names_buffer[names_len] = '\0';
-    
+    free(names_buffer);
     return result;
 }
 
 /* Free results from find. */
-void deleteResult(FindResult *result) {
-    free(result->names_buffer);
+void deleteResult(FindResult *result, int called_by) {
+    if (called_by == FIND) {
+        free(result->names_buffer);
+    }
     free(result);
+    
 }
 
 /* Move in blocks of 512 bytes the object(Object Pointer) to the end of the database(File Pointer).
@@ -325,10 +333,13 @@ int import(FILE *fp, char fname[], char objname[]) {
     }
 
     result = find(fp, objname, IMPORT);
+    
     if (result->num_results > 0) {
+        deleteResult(result, IMPORT);
         fclose(op);
         return -2;
     }
+    deleteResult(result, IMPORT);
 
     function_res = move_block(fp, op, objname);
     if (!function_res) {
