@@ -14,7 +14,7 @@
     int metadata(FILE *fp);
     int fend(FILE *fp);
     FindResult *find(FILE *fp, char name[], int called_by);
-    void deleteResult(FindResult *result);
+    void deleteResult(FindResult *result, int called_by);
     int move_block(FILE *fp, FILE *op, char objname[]);
     int import(FILE *fp, char fname[], char objname[]);
     int close(FILE **fp);
