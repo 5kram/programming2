@@ -61,15 +61,22 @@ int main (int argc, char *argv[]) {
                 }
                 i = 0;
                 printf("\n##\n");
-                while(num < result->num_results || i < result->names_len) {
-                    if(result->names_buffer[i] == ' ') {
-                        printf("\n");
+                if (result->num_results > 0) {
+                    while(num < result->num_results - 1 || i < result->names_len - 1) {
+                        if(result->names_buffer[i] == ' ') {
+                            printf("\n");
+                            i++;
+                            num++;
+                        }
+                        putchar(result->names_buffer[i]);
+                        #ifdef DEBUG
+                            fprintf(stderr, "names_buffer[i]: %c, i: %d, names_len: %d\n", result->names_buffer[i], i, result->names_len);
+                        #endif
                         i++;
-                        num++;
                     }
-                    putchar(result->names_buffer[i]);
-                    i++;
+                    printf("\n");
                 }
+                
                 deleteResult(result);
                 break;
             }
