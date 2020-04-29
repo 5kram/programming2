@@ -10,10 +10,9 @@
 #define FIND 1
 /*#define DEBUG*/
 
-/*
- * Close the file.
- * Return DB_ERROR(-1) -> No open DB
- * Return 1 -> OK
+/* Close the file.
+ * Return DB_ERROR(-1) -> No open DB.
+ * Return 1 -> OK. 
  */
 int close(FILE **fp) {
     if (*fp == NULL) {
@@ -25,9 +24,7 @@ int close(FILE **fp) {
     return 1;
 }
 
-/*
- * Called when an error has occured.
- */
+/* Called when an error has occured. */
 void fexit(FILE *fp, const char func[], const int line) {
     #ifdef DEBUG
         fprintf(stderr, "\nError in function: %s\nLine: %d\n", func, line);
@@ -36,11 +33,10 @@ void fexit(FILE *fp, const char func[], const int line) {
     EXIT_FAILURE;
 }
 
-/*
- * Validation of database
- * Check the existance of Magic Number
- * Returns 0 -> Not Valid
- * Returns 1 -> Valid
+/* Validation of database.
+ * Check the existance of Magic Number.
+ * Returns 0 -> Not Valid.
+ * Returns 1 -> Valid.
  */
 int db_valid(FILE *fp) {
     int i, val[] = {0xda, 0x7a, 0xba, 0x53}, buf[MN_SIZE] = {0};
@@ -59,11 +55,9 @@ int db_valid(FILE *fp) {
     return 1;
 }
 
-/*
- * Metadata Insertion in the begining of the database
- * (Magic Number)
- * Return 0 -> ERROR
- * Return 1 -> OK
+/* Metadata Insertion in the begining of the database (Magic Number).
+ * Return 0 -> ERROR.
+ * Return 1 -> OK.
  */
 int metadata(FILE *fp) {
     int i, val[] = {0xda, 0x7a, 0xba, 0x53};
@@ -79,10 +73,9 @@ int metadata(FILE *fp) {
     return 1;
 }
 
-/*
- * Check if the file pointer is in the end of the file. 
- * Return 0 -> End of file
- * Return 1 -> Not end of file
+/* Check if the file pointer is in the end of the file. 
+ * Return 0 -> End of file.
+ * Return 1 -> Not end of file.
  */
 int fend(FILE *fp) {
     #ifdef DEBUG
@@ -109,7 +102,7 @@ FindResult *find(FILE *fp, char name[], int called_by) {
     
     
     FindResult *result = (FindResult*)malloc(sizeof(FindResult));
-    /* Check if there is open db */
+    /* Check if there is open db. */
     if (fp == NULL) {
         result->num_results = -1;
         return result;
@@ -121,7 +114,7 @@ FindResult *find(FILE *fp, char name[], int called_by) {
             fexit(fp, __func__, __LINE__);
         }
 
-        /* Check if object size is within limits */
+        /* Check if object size is within limits. */
         if (objnamelen >= NAME_LEN) {
             fexit(fp, __func__, __LINE__);
         }
@@ -131,19 +124,19 @@ FindResult *find(FILE *fp, char name[], int called_by) {
         }
         objname[objnamelen] = '\0';
         if (called_by == FIND) {
-            /* If name is contained in this object name */
+            /* If name is contained in this object name. */
             if (strstr (objname, name) != NULL || strcmp(name, "*") == 0) {
                 #ifdef DEBUG
                 fprintf(stderr, "objnamelen: %d, objname: %s\n", objnamelen, objname);
                 #endif
                 
-                /* Reallocate space in names_buffer to store `objnamelen` + 1 bytes
-                 * names_buffer_len increased by objnamelen + 1 each time a name is stored
+                /* Reallocate space in names_buffer to store `objnamelen` + 1 bytes.
+                 * names_buffer_len increased by objnamelen + 1 each time a name is stored.
                  */
                 names_buffer_len = names_buffer_len + objnamelen + 1;
                 names_buffer = realloc(names_buffer, names_buffer_len);
                 
-                /* Copy objname to names_buffer, create offset in names, increment num_results */
+                /* Copy objname to names_buffer, create offset in names, increment num_results. */
                 int i = 0;
                 do {
                     names_buffer[names_len + i] = objname[i];
@@ -156,13 +149,10 @@ FindResult *find(FILE *fp, char name[], int called_by) {
 
                 names_len = names_len + objnamelen + 1;
                 names_buffer[names_len - 1] = ' ';
-                #ifdef DEBUG
-                    fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
-                #endif
                 num_results++;
             }
         }
-        /* If called by import */
+        /* If called by import, return num_results = 1. */
         else {
             if (!strcmp(name, objname)) {
                 num_results++;
@@ -171,16 +161,17 @@ FindResult *find(FILE *fp, char name[], int called_by) {
             }
         }
 
-        /* Skip the actual object */
+        /* Skip the actual object. */
         if (fread(&objsize, sizeof(int), 1, fp) != 1 ) {
             fexit(fp, __func__, __LINE__);
         }
         fseek(fp, objsize, SEEK_CUR);
     }
-    
+    /* Create names_buffer offset. */
     if (num_results == 0) {
-         names_buffer = realloc(names_buffer, 10);
-         names_buffer[0] = ' ';
+        names_buffer = realloc(names_buffer, 10);
+        names_buffer[0] = ' ';
+        names_len++;
     }
     else {
         names_buffer[names_len] = '\0';
@@ -188,35 +179,35 @@ FindResult *find(FILE *fp, char name[], int called_by) {
     #ifdef DEBUG
             fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
     #endif
-    result->names_buffer = malloc(sizeof(names_buffer));
+    /* Fill the struct with data, that been computed above. */ 
+    result->names_buffer = (char*)malloc(names_len);
     result->num_results = num_results;
-    result->names_buffer = names_buffer; 
+    memcpy(result->names_buffer, names_buffer, names_len);
     result->names_len = names_len;
+    result->names_buffer[names_len] = '\0';
     
     return result;
 }
 
-/*
- * Free results from find
- */
+/* Free results from find. */
 void deleteResult(FindResult *result) {
     free(result->names_buffer);
     free(result);
 }
 
-/*
- * Move in blocks of 512 bytes the object(Object Pointer) to the end of the database(File Pointer).
+/* Move in blocks of 512 bytes the object(Object Pointer) to the end of the database(File Pointer).
  * When the object is imported the format in the database is [..(size of name)(name)(size of object)(content of object)EOF].
  */
-int move_block (FILE *fp, FILE *op, char objname[]) {
+int move_block(FILE *fp, FILE *op, char objname[]) {
     char buffer[BLOCK] = {0};
     int namelen = 0, objsize = 0, repeats = 0, remain = 0, i;
+
     fseek(fp, 0, SEEK_END);
     #ifdef DEBUG
         fprintf(stderr, "\nImport in end of: %ld, Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
     #endif
-    /* Insert objects info in to the database */
-    /* Size of name + name + size of object */
+    /* Insert objects info in to the database in the following order.
+     * Size of name, name, size of object and lastly the actual object. */
     namelen = strlen(objname);
     if (fwrite(&namelen, sizeof(int), 1, fp) != 1) {
         fexit(fp, __func__, __LINE__);
@@ -236,8 +227,10 @@ int move_block (FILE *fp, FILE *op, char objname[]) {
     #ifdef DEBUG
         fprintf(stderr, "\n%d, %s, %d, Function: %s, Line: %d\n", namelen, objname, objsize, __func__, __LINE__); 
     #endif
-    /* Move bytes */
-    /* if objsize < BLOCK, doesnt loop */
+    /* Move bytes in blocks.
+     * Compute how many repeats needed, to move whole blocks(512 bytes).
+     * Move blocks "repeats" times.
+     * Compute how many bytes remain and move them. */
     repeats = objsize / BLOCK;
     remain = objsize % BLOCK;
     for (i = 0; i < repeats; i++) {
@@ -262,23 +255,22 @@ int move_block (FILE *fp, FILE *op, char objname[]) {
     return 1;
 }
 
-/*
- * Create or open, if already exists, a database.
+/* Create or open, if already exists, a database.
  * When create a new database: first create its metadata (Magic Number at the begining of the file).
  * When open an already existing base: check if its a valid database (contains the MN at the begining).
  * If there is error opening the database, return DB_ERROR. If the file exists but its not a database, return 0.
  * A valid database created or existed and opened with no error, return 1.
  */
 int open(FILE **fp, char dbname[]) {
-    int check;
+    int function_res;
     
-    /* Close any pre-existing open file */
+    /* Close any pre-existing open file. */
     if (*fp != NULL && ftell(*fp) >= 0) {
        close(&(*fp));
     }
-    /* Try to open file */
+    /* Try to open file. */
     *fp = fopen(dbname, "rb+");
-    /* If file does not exist, try to create it */
+    /* If file does not exist, try to create it. */
     if (*fp == NULL) {
         *fp = fopen(dbname, "wb+");
         if (ferror(*fp)) {
@@ -287,9 +279,9 @@ int open(FILE **fp, char dbname[]) {
             #endif
             return DB_ERROR;
         }
-        /* Create metadata */
-        check = metadata(*fp);
-        if (!check) {
+        /* Create metadata. */
+        function_res = metadata(*fp);
+        if (!function_res) {
             #ifdef DEBUG
                 fprintf(stderr, "\nNew DB. Error in Metadata:\nFunction: %s\nLine: %d\n", __func__, __LINE__);
             #endif
@@ -298,37 +290,36 @@ int open(FILE **fp, char dbname[]) {
         }
     }
 
-    check = db_valid(*fp);
-    /* Its db */
-    if (check) {
+    function_res = db_valid(*fp);
+    if (function_res) {
         return 1;
-    } else { /* Its not db */
+    }
+    else {
         close(&(*fp));
         return 0;
     }
 }
 
-/*
- * Import an object in the database.
+/* Import an object in the database.
  * Get the name of the object which will be imported, check if a file with that name exists. 
  * Then, get a name, which, the user, wants the object to get named after, when the object gets in the base.
  * Check if there is an object with that name in the base, if not, call function move_block to import the object with the given name in the base.
- * Return -1 -> No db
- * Return 0 -> No fname
- * Return -2 -> Object name already in db
+ * Return -1 -> No db.
+ * Return 0 -> No fname.
+ * Return -2 -> Object name already in db.
  */
 int import(FILE *fp, char fname[], char objname[]) {
     FILE *op;
-    int check;
+    int function_res;
     FindResult *result;
 
-    /* No open db */
+    /* No open db. */
     if (fp == NULL) {
         return DB_ERROR;
     }
 
     op = fopen(fname, "rb");
-    /* No existing file */
+    /* No existing file. */
     if (op == NULL ) {
         return 0;
     }
@@ -339,8 +330,8 @@ int import(FILE *fp, char fname[], char objname[]) {
         return -2;
     }
 
-    check = move_block(fp, op, objname);
-    if (!check) {
+    function_res = move_block(fp, op, objname);
+    if (!function_res) {
         fexit(op, __func__, __LINE__);
     }
     fclose(op);
