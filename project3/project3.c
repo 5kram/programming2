@@ -76,8 +76,7 @@ int main (int argc, char *argv[]) {
                     }
                     printf("\n");
                 }
-                
-                deleteResult(result);
+                deleteResult(result, FIND);
                 break;
             }
             case 'e': {
