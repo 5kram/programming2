@@ -57,6 +57,7 @@ int main (int argc, char *argv[]) {
                 result = find(fp, name, FIND);
                 if (result->num_results == -1) {
                     printf("\nNo open db file.\n");
+                    deleteResult(result, IMPORT);
                     break;
                 }
                 i = 0;
