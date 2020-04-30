@@ -17,5 +17,6 @@
     void deleteResult(FindResult *result, int called_by);
     int move_block(FILE *fp, FILE *op, char objname[]);
     int import(FILE *fp, char fname[], char objname[]);
+    int export (FILE *fp, char objname[], char fname[]);
     int close(FILE **fp);
 #endif
