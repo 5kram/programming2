@@ -9,7 +9,7 @@
 #define NO 0
 #define IMPORT 0
 #define FIND 1
-/*#define DEBUG*/
+#define DEBUG
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
@@ -70,9 +70,6 @@ int main (int argc, char *argv[]) {
                             num++;
                         }
                         putchar(result->names_buffer[i]);
-                        #ifdef DEBUG
-                            fprintf(stderr, "names_buffer[i]: %c, i: %d, names_len: %d\n", result->names_buffer[i], i, result->names_len);
-                        #endif
                         i++;
                     }
                     printf("\n");
@@ -81,6 +78,22 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'e': {
+                scanf(" %s %s", objname, fname);
+                check = export(fp, objname, fname);
+                if (check == -1) {
+                    printf("\nNo open db file.\n");
+                }
+                if (check == 0) {
+                    printf("\nObject %s not in db.\n", objname);
+                }
+                if (check == -2) {
+                    printf("\nCannot open file %s.\n", fname);
+                }
+                #ifdef DEBUG
+                if (check == 1) {
+                    printf("\nEXPORT OK.\n");
+                }
+                #endif
                 break;
             }
             case 'd': {
