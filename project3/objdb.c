@@ -8,7 +8,7 @@
 #define NAME_LEN 256
 #define IMPORT 0
 #define FIND 1
-/*#define DEBUG*/
+#define DEBUG
 
 /* Close the file.
  * Return DB_ERROR(-1) -> No open DB.
@@ -78,16 +78,10 @@ int metadata(FILE *fp) {
  * Return 1 -> Not end of file.
  */
 int fend(FILE *fp) {
-    #ifdef DEBUG
-        fprintf(stderr, "\nEnd: %ld? Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
-    #endif
     if (getc(fp) == EOF) {
         return 0;
     }
     fseek(fp, -1, SEEK_CUR);
-    #ifdef DEBUG
-        fprintf(stderr, "\nNot the End: %ld Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
-    #endif
     return 1;
 }
 
@@ -123,6 +117,10 @@ FindResult *find(FILE *fp, char name[], int called_by) {
             fexit(fp, __func__, __LINE__);
         }
         objname[objnamelen] = '\0';
+        #ifdef DEBUG
+                fprintf(stderr, "objnamelen: %d, objname: %s\n", objnamelen, objname);
+        #endif
+        /* If called by find: search all objects names if the name, the user gave, is part of them. */ 
         if (called_by == FIND) {
             /* If name is contained in this object name. */
             if (strstr (objname, name) != NULL || strcmp(name, "*") == 0) {
@@ -139,9 +137,6 @@ FindResult *find(FILE *fp, char name[], int called_by) {
                 int i = 0;
                 do {
                     names_buffer[names_len + i] = objname[i];
-                    #ifdef DEBUG
-                        fprintf(stderr, "objname[]: %c && names_buffer[]: %c\n", objname[i], names_buffer[names_len + i]);
-                    #endif
                     i++;
                 }
                 while (objname[i] != '\0');
@@ -181,9 +176,6 @@ FindResult *find(FILE *fp, char name[], int called_by) {
     else {
         names_buffer[names_len] = '\0';
     }
-    #ifdef DEBUG
-            fprintf(stderr, "names_buffer: %s, names_len: %d\n", names_buffer, names_len);
-    #endif
     /* Fill the struct with data, that been computed above. */
     result->names_buffer = (char*)malloc(names_len + 1);
     result->num_results = num_results;
@@ -212,7 +204,7 @@ int move_block(FILE *fp, FILE *op, char objname[]) {
 
     fseek(fp, 0, SEEK_END);
     #ifdef DEBUG
-        fprintf(stderr, "\nImport in end of: %ld, Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
+        fprintf(stderr, "\nImport in the end of: %ld, Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
     #endif
     /* Insert objects info in to the database in the following order.
      * Size of name, name, size of object and lastly the actual object. */
@@ -297,7 +289,7 @@ int open(FILE **fp, char dbname[]) {
             return DB_ERROR;
         }
     }
-
+    /* Check if the database is valid. */
     function_res = db_valid(*fp);
     if (function_res) {
         return 1;
@@ -345,6 +337,37 @@ int import(FILE *fp, char fname[], char objname[]) {
     if (!function_res) {
         fexit(op, __func__, __LINE__);
     }
+    fclose(op);
+    return 1;
+}
+
+/* Documentation.
+ * Return DB_ERROR -> no open database.
+ * Return 0 -> object not found.
+ * Return -2 -> file already exists/cant open file.
+ */
+int export (FILE *fp, char objname[], char fname[]) {
+    FILE *op;
+    FindResult *result;
+
+    /* No open db. */
+    if (fp == NULL) {
+        return DB_ERROR;
+    }
+
+    op = fopen(fname, "wbx");
+    /* File already exists or couldnt be opened. */
+    if (op == NULL ) {
+        return -2;
+    }
+
+    result = find(fp, objname, IMPORT);
+    if (result->num_results == 0) {
+        deleteResult(result, IMPORT);
+        return 0;
+    }
+    deleteResult(result, IMPORT);
+
     fclose(op);
     return 1;
 }
