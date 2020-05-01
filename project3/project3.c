@@ -9,7 +9,7 @@
 #define NO 0
 #define IMPORT 0
 #define FIND 1
-#define DEBUG
+/*#define DEBUG*/
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
