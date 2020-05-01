@@ -15,7 +15,8 @@
     int fend(FILE *fp);
     FindResult *find(FILE *fp, char name[], int called_by);
     void deleteResult(FindResult *result, int called_by);
-    int move_block(FILE *fp, FILE *op, char objname[]);
+    int move_in_db(FILE *fp, FILE *op, char objname[]);
+    int move_from_db(FILE *fp, FILE *op, char fname[]);
     int import(FILE *fp, char fname[], char objname[]);
     int export (FILE *fp, char objname[], char fname[]);
     int close(FILE **fp);
