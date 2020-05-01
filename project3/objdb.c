@@ -8,7 +8,7 @@
 #define NAME_LEN 256
 #define IMPORT 0
 #define FIND 1
-#define DEBUG
+/*#define DEBUG*/
 
 /* Close the file.
  * Return DB_ERROR(-1) -> No open DB.
@@ -30,7 +30,7 @@ void fexit(FILE *fp, const char func[], const int line) {
         fprintf(stderr, "\nError in function: %s\nLine: %d\n", func, line);
     #endif
     close(&fp);
-    EXIT_FAILURE;
+    exit(EXIT_FAILURE);
 }
 
 /* Validation of database.
@@ -39,19 +39,22 @@ void fexit(FILE *fp, const char func[], const int line) {
  * Returns 1 -> Valid.
  */
 int db_valid(FILE *fp) {
-    int i, val[] = {0xda, 0x7a, 0xba, 0x53}, buf[MN_SIZE] = {0};
-    
+    int i = 0, val[] = {0xda, 0x7a, 0xba, 0x53}, buf[MN_SIZE] = {0}, bytes = 0;
+
     fseek(fp, 0, SEEK_SET);
-    for (i = 0; i < MN_SIZE; i++) {
-        if (fread(&buf[i], 1, 1, fp) != 1) {
-            fexit(fp, __func__, __LINE__);
+    /* Read the first 4 bytes and compare them with MN. 
+     * If 0 bytes were read instead of 1, continue reading. */
+    while(bytes < MN_SIZE) {
+        bytes = bytes + fread(&buf[i], 1, 1, fp);
+        if (bytes == i) {
+            i--;
         }
-    }
-    for (i = 0; i < MN_SIZE; i++) {
         if (val[i] != buf[i]) {
             return 0;
         }
+        i++;
     }
+    
     return 1;
 }
 
@@ -198,14 +201,11 @@ void deleteResult(FindResult *result, int called_by) {
 /* Move in blocks of 512 bytes the object(Object Pointer) to the end of the database(File Pointer).
  * When the object is imported the format in the database is [..(size of name)(name)(size of object)(content of object)EOF].
  */
-int move_block(FILE *fp, FILE *op, char objname[]) {
+int move_in_db(FILE *fp, FILE *op, char objname[]) {
     char buffer[BLOCK] = {0};
     int namelen = 0, objsize = 0, repeats = 0, remain = 0, i;
 
     fseek(fp, 0, SEEK_END);
-    #ifdef DEBUG
-        fprintf(stderr, "\nImport in the end of: %ld, Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__);
-    #endif
     /* Insert objects info in to the database in the following order.
      * Size of name, name, size of object and lastly the actual object. */
     namelen = strlen(objname);
@@ -255,6 +255,13 @@ int move_block(FILE *fp, FILE *op, char objname[]) {
     return 1;
 }
 
+/* Move an object, which is inside the database, to a new file. 
+ * Move it in blocks of 512 bytes.
+ */
+int move_from_db(FILE *fp, FILE *op, char fname[]) {
+
+    return 1;
+}
 /* Create or open, if already exists, a database.
  * When create a new database: first create its metadata (Magic Number at the begining of the file).
  * When open an already existing base: check if its a valid database (contains the MN at the begining).
@@ -333,7 +340,7 @@ int import(FILE *fp, char fname[], char objname[]) {
     }
     deleteResult(result, IMPORT);
 
-    function_res = move_block(fp, op, objname);
+    function_res = move_in_db(fp, op, objname);
     if (!function_res) {
         fexit(op, __func__, __LINE__);
     }
