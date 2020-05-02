@@ -97,10 +97,18 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'd': {
+                scanf(" %s", name);
+                check = delete(&fp, name, dbname);
+                if (check == -1) {
+                    printf("\nNo open db file.\n");
+                }
+                if (check == 0) {
+                    printf("\nObject %s not in db.\n", name);
+                }
                 break;
             }
             case 'c': {
-                check =  close (&fp);
+                check =  closef(&fp);
                 if (check == -1) {
                     printf("\nNo open db file.\n");
                 }
@@ -112,7 +120,7 @@ int main (int argc, char *argv[]) {
                 break;
             }
             case 'q': {
-                close(&fp);
+                closef(&fp);
                 return 0;
             }
             default : {
