@@ -40,7 +40,7 @@ int main (int argc, char *argv[]) {
             }
             case 'i': {
                 scanf (" %s %s", fname, objname);
-                check = import(fp, fname, objname);
+                check = import(&fp, fname, objname);
                 if (check == 0) {
                     printf("\nFile %s not found.\n", fname);
                 }
@@ -54,7 +54,7 @@ int main (int argc, char *argv[]) {
             }
             case 'f': {
                 scanf(" %s", name);
-                result = find(fp, name, FIND);
+                result = find(&fp, name, FIND);
                 if (result->num_results == -1) {
                     printf("\nNo open db file.\n");
                     deleteResult(result, IMPORT);
@@ -79,7 +79,7 @@ int main (int argc, char *argv[]) {
             }
             case 'e': {
                 scanf(" %s %s", objname, fname);
-                check = export(fp, objname, fname);
+                check = export(&fp, objname, fname);
                 if (check == -1) {
                     printf("\nNo open db file.\n");
                 }
