@@ -9,6 +9,8 @@
     } FindResult;
 
     int main(int argc, char *argv[]);
+    void read(void *ptr, int size_t_, int nmemb, FILE *stream);
+    void write(void *ptr, int size_t_, int nmemb, FILE *stream);
     void fexit(FILE *fp,const char func[],const int line);
     int open(FILE **fp, char dbname[]);
     int metadata(FILE *fp);
