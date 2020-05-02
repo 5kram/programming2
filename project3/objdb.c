@@ -82,11 +82,17 @@ void write(void *ptr, int size_t_, int nmemb, FILE *stream) {
  * Returns 1 -> Valid.
  */
 int db_valid(FILE *fp) {
-    int i = 0, val[] = {0xda, 0x7a, 0xba, 0x53}, buf[MN_SIZE] = {0};
+    int i = 0, val[] = {0xda, 0x7a, 0xba, 0x53}, buf[MN_SIZE] = {0}, fp_size = 0;
 
-    fseek(fp, 0, SEEK_SET);
+    /* Check if file has less than MN_SIZE bytes. */
+    fseek(fp, 0, SEEK_END);
+    fp_size = ftell(fp);
+    if (fp_size < MN_SIZE) {
+        return 0;
+    }
     /* Read the first 4 bytes and compare them with MN. 
      * If 0 bytes were read instead of 1, continue reading. */
+    fseek(fp, 0, SEEK_SET);
     while(i < MN_SIZE) {
         read(&buf[i], 1, 1, fp);
         if (val[i] != buf[i]) {
