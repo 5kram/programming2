@@ -34,7 +34,11 @@ void fexit(FILE *fp, const char func[], const int line) {
     close(&fp);
     exit(EXIT_FAILURE);
 }
- 
+
+/* Read function.
+ * Check if fread returns the wanted bytes.
+ * If less bytes returned, call it again, until they are all read.
+ */
 void read(void *ptr, int size_t_, int nmemb, FILE *stream) {
     int bytes_written = 0, bytes_wanted;
 
@@ -51,6 +55,10 @@ void read(void *ptr, int size_t_, int nmemb, FILE *stream) {
     }
 }
 
+/* Write function.
+ * Check if fwrite returns the wanted bytes.
+ * If less bytes returned, call it again, until they are all written.
+ */
 void write(void *ptr, int size_t_, int nmemb, FILE *stream) {
     int bytes_written = 0, bytes_wanted;
 
@@ -65,6 +73,7 @@ void write(void *ptr, int size_t_, int nmemb, FILE *stream) {
         bytes_written = fwrite(ptr, size_t_, nmemb, stream);
         bytes_wanted += bytes_written;
     }
+    fflush(stream);
 }
 
 /* Validation of database.
@@ -100,7 +109,6 @@ int metadata(FILE *fp) {
     for (i = 0; i < MN_SIZE; i++) {
         write(&val[i], 1, 1, fp);
     }
-    fflush(fp);
     fseek(fp, 0, SEEK_SET);
     return 1;
 }
@@ -232,14 +240,11 @@ int move_in_db(FILE *fp, FILE *op, char objname[]) {
      * Size of name, name, size of object and lastly the actual object. */
     namelen = strlen(objname);
     write(&namelen, INT, 1, fp);
-    fflush(fp);
     write(objname, CHAR, namelen, fp);
-    fflush(fp);
     fseek(op, 0, SEEK_END);
     objsize = ftell (op);
     fseek(op, 0, SEEK_SET);
     write(&objsize, INT, 1, fp);
-    fflush(fp);
     #ifdef DEBUG
         fprintf(stderr, "\n%d, %s, %d, Function: %s, Line: %d\n", namelen, objname, objsize, __func__, __LINE__); 
     #endif
@@ -252,12 +257,10 @@ int move_in_db(FILE *fp, FILE *op, char objname[]) {
     for (i = 0; i < repeats; i++) {
         read(buffer, BLOCK, 1, op);
         write(buffer, BLOCK, 1, fp);
-        fflush(fp);
     }
     if (remain != 0) {
         read(buffer, remain, 1, op);
         write(buffer, remain, 1, fp);
-        fflush(fp);
     }
     
     return 1;
