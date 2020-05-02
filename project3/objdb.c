@@ -54,10 +54,10 @@ void read(void *ptr, int size_t_, int nmemb, FILE *stream) {
     while (bytes_wanted == nmemb && !feof(stream) && !ferror(stream)) {
         bytes_written = fread(ptr, size_t_, nmemb, stream);
         bytes_wanted += bytes_written;
-    }
+    }/*
     if (feof(stream) || ferror(stream)) {
         fexit(&stream, __func__, __LINE__);
-    }
+    }*/
 }
 
 /* Write function.
@@ -142,13 +142,34 @@ int fend(FILE *fp) {
     return 1;
 }
 
+ /* Move bytes in blocks.
+ * Compute how many repeats needed, to move whole blocks(512 bytes).
+ * Move blocks "repeats" times.
+ * Compute how many bytes remain and move them.
+ */
+void move_512(FILE *dest, FILE *source, int objsize) {
+    int repeats = 0, remain = 0, i;
+    char buffer[BLOCK] = {0};
+
+    repeats = objsize / BLOCK;
+    remain = objsize % BLOCK;
+    for (i = 0; i < repeats; i++) {
+        read(buffer, BLOCK, 1, source);
+        write(buffer, BLOCK, 1, dest);
+    }
+    if (remain != 0) {
+        read(buffer, remain, 1, source);
+        write(buffer, remain, 1, dest);
+    }
+}
+
 /* If called by find: find every object name which contain (or is equal with) the name, the user gave.
  * Return a struct with the names in a format: [(name1)(space)(name2)(space)\0] and the number of names found.
  * If called by import: find the exact name, the user gave and return the struct with num_results = 1.
  * In case there is not any open database return the struct with num_results = -1.
  */
 FindResult *find(FILE **fp, char name[], int called_by) {
-    int objnamelen = 0, objsize = 0, names_len = 0, names_buffer_len = 100, num_results = 0;
+    int objnamelen = 0, objsize = 0, names_len = 0, names_buffer_len = 100, num_results = 0, object_position;
     char objname[NAME_LEN] = {0}, *names_buffer = NULL;
     
     
@@ -203,6 +224,9 @@ FindResult *find(FILE **fp, char name[], int called_by) {
             if (!strcmp(name, objname)) {
                 num_results++;
                 result->num_results = num_results;
+                fseek(*fp, -(objnamelen * sizeof(char) + sizeof(int)), SEEK_CUR);
+                object_position = ftell(*fp);
+                result->object_position = object_position;
                 return result;
             }
         }
@@ -249,10 +273,12 @@ void deleteResult(FindResult *result, int called_by) {
  * When the object is imported the format in the database is [..(size of name)(name)(size of object)(content of object)EOF].
  */
 int move_in_db(FILE *fp, FILE *op, char objname[]) {
-    char buffer[BLOCK] = {0};
-    int namelen = 0, objsize = 0, repeats = 0, remain = 0, i;
+    int namelen = 0, objsize = 0;
 
     fseek(fp, 0, SEEK_END);
+     #ifdef DEBUG
+        fprintf(stderr, "\nFile position: %ld, Function: %s, Line: %d\n", ftell(fp), __func__, __LINE__); 
+    #endif
     /* Insert objects info in to the database in the following order.
      * Size of name, name, size of object and lastly the actual object. */
     namelen = strlen(objname);
@@ -263,33 +289,38 @@ int move_in_db(FILE *fp, FILE *op, char objname[]) {
     fseek(op, 0, SEEK_SET);
     write(&objsize, INT, 1, fp);
     #ifdef DEBUG
-        fprintf(stderr, "\n%d, %s, %d, Function: %s, Line: %d\n", namelen, objname, objsize, __func__, __LINE__); 
+        fprintf(stderr, "\nnamelen: %d, objname: %s, objsize: %d, Function: %s, Line: %d\n", namelen, objname, objsize, __func__, __LINE__); 
     #endif
-    /* Move bytes in blocks.
-     * Compute how many repeats needed, to move whole blocks(512 bytes).
-     * Move blocks "repeats" times.
-     * Compute how many bytes remain and move them. */
-    repeats = objsize / BLOCK;
-    remain = objsize % BLOCK;
-    for (i = 0; i < repeats; i++) {
-        read(buffer, BLOCK, 1, op);
-        write(buffer, BLOCK, 1, fp);
-    }
-    if (remain != 0) {
-        read(buffer, remain, 1, op);
-        write(buffer, remain, 1, fp);
-    }
+   
+    move_512(fp, op, objsize);
     
     return 1;
 }
 
 /* Move an object, which is inside the database, to a new file. 
- * Move it in blocks of 512 bytes.
+ * Move the object in blocks of 512 bytes.
  */
-int move_from_db(FILE *fp, FILE *op, char fname[]) {
+int move_from_db(FILE *fp, FILE *op, char object_name[], int object_position) {
+    int objnamelen = 0, object_size = 0;
+
+    fseek(fp, object_position, SEEK_SET);
+     #ifdef DEBUG
+        fprintf(stderr, "\nobject position: %d\n", object_position);
+    #endif
+    read(&objnamelen, INT, 1, fp);
+    fseek(fp, objnamelen * sizeof(char), SEEK_CUR);
+    read(&object_size, INT, 1, fp);
+    #ifdef DEBUG
+        fprintf(stderr, "\nobject size: %d\n", object_size);
+    #endif
+   
+    move_512(op, fp, object_size);
 
     return 1;
 }
+
+
+
 /* Create or open, if already exists, a database.
  * When create a new database: first create its metadata (Magic Number at the begining of the file).
  * When open an already existing base: check if its a valid database (contains the MN at the begining).
@@ -384,6 +415,7 @@ int import(FILE **fp, char fname[], char objname[]) {
 int export (FILE **fp, char objname[], char fname[]) {
     FILE *op;
     FindResult *result;
+    int object_position = 0;
 
     /* No open db. */
     if (*fp == NULL) {
@@ -401,8 +433,10 @@ int export (FILE **fp, char objname[], char fname[]) {
         deleteResult(result, IMPORT);
         return 0;
     }
+    object_position = result->object_position;
+    move_from_db(*fp, op, fname, object_position);
+    
     deleteResult(result, IMPORT);
-
     fclose(op);
     return 1;
 }
