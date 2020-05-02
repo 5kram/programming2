@@ -8,6 +8,8 @@
 #define NAME_LEN 256
 #define IMPORT 0
 #define FIND 1
+#define CHAR -1
+#define INT 0
 /*#define DEBUG*/
 
 /* Close the file.
@@ -32,6 +34,38 @@ void fexit(FILE *fp, const char func[], const int line) {
     close(&fp);
     exit(EXIT_FAILURE);
 }
+ 
+void read(void *ptr, int size_t_, int nmemb, FILE *stream) {
+    int bytes_written = 0, bytes_wanted;
+
+    if (size_t_ == CHAR) {
+        size_t_ = sizeof(char);
+    }
+    else if (size_t_ == INT) {
+        size_t_ = sizeof(int);
+    }
+    bytes_wanted = nmemb;
+    while (bytes_wanted == nmemb) {
+        bytes_written = fread(ptr, size_t_, nmemb, stream);
+        bytes_wanted += bytes_written;
+    }
+}
+
+void write(void *ptr, int size_t_, int nmemb, FILE *stream) {
+    int bytes_written = 0, bytes_wanted;
+
+    if (size_t_ == CHAR) {
+        size_t_ = sizeof(char);
+    }
+    else if (size_t_ == INT) {
+        size_t_ = sizeof(int);
+    }
+    bytes_wanted = nmemb;
+    while (bytes_wanted == nmemb) {
+        bytes_written = fwrite(ptr, size_t_, nmemb, stream);
+        bytes_wanted += bytes_written;
+    }
+}
 
 /* Validation of database.
  * Check the existance of Magic Number.
@@ -39,16 +73,13 @@ void fexit(FILE *fp, const char func[], const int line) {
  * Returns 1 -> Valid.
  */
 int db_valid(FILE *fp) {
-    int i = 0, val[] = {0xda, 0x7a, 0xba, 0x53}, buf[MN_SIZE] = {0}, bytes = 0;
+    int i = 0, val[] = {0xda, 0x7a, 0xba, 0x53}, buf[MN_SIZE] = {0};
 
     fseek(fp, 0, SEEK_SET);
     /* Read the first 4 bytes and compare them with MN. 
      * If 0 bytes were read instead of 1, continue reading. */
-    while(bytes < MN_SIZE) {
-        bytes = bytes + fread(&buf[i], 1, 1, fp);
-        if (bytes == i) {
-            i--;
-        }
+    while(i < MN_SIZE) {
+        read(&buf[i], 1, 1, fp);
         if (val[i] != buf[i]) {
             return 0;
         }
@@ -67,9 +98,7 @@ int metadata(FILE *fp) {
 
     fseek(fp, 0, SEEK_SET);
     for (i = 0; i < MN_SIZE; i++) {
-        if (fwrite(&val[i], 1, 1, fp) != 1) {
-            fexit(fp, __func__, __LINE__);
-        }
+        write(&val[i], 1, 1, fp);
     }
     fflush(fp);
     fseek(fp, 0, SEEK_SET);
@@ -107,18 +136,13 @@ FindResult *find(FILE *fp, char name[], int called_by) {
     fseek(fp, MN_SIZE, SEEK_SET);
     while (fend(fp)) {
         objname[0] = '\0';
-        if (fread(&objnamelen, sizeof(int), 1, fp) != 1) {
-            fexit(fp, __func__, __LINE__);
-        }
-
+        read(&objnamelen, INT, 1, fp);
         /* Check if object size is within limits. */
         if (objnamelen >= NAME_LEN) {
             fexit(fp, __func__, __LINE__);
         }
 
-        if (fread(objname, sizeof(char), objnamelen, fp) != objnamelen) {
-            fexit(fp, __func__, __LINE__);
-        }
+        read(objname, CHAR, objnamelen, fp);
         objname[objnamelen] = '\0';
         #ifdef DEBUG
                 fprintf(stderr, "objnamelen: %d, objname: %s\n", objnamelen, objname);
@@ -159,9 +183,7 @@ FindResult *find(FILE *fp, char name[], int called_by) {
         }
 
         /* Skip the actual object. */
-        if (fread(&objsize, sizeof(int), 1, fp) != 1 ) {
-            fexit(fp, __func__, __LINE__);
-        }
+        read(&objsize, INT, 1, fp);
         fseek(fp, objsize, SEEK_CUR);
     }
     /* If called by import and havent found that exact name in the database.
@@ -209,20 +231,14 @@ int move_in_db(FILE *fp, FILE *op, char objname[]) {
     /* Insert objects info in to the database in the following order.
      * Size of name, name, size of object and lastly the actual object. */
     namelen = strlen(objname);
-    if (fwrite(&namelen, sizeof(int), 1, fp) != 1) {
-        fexit(fp, __func__, __LINE__);
-    }
+    write(&namelen, INT, 1, fp);
     fflush(fp);
-    if (fwrite(objname, sizeof(char), namelen, fp) != namelen) {
-        fexit(fp, __func__, __LINE__);
-    }
+    write(objname, CHAR, namelen, fp);
     fflush(fp);
     fseek(op, 0, SEEK_END);
     objsize = ftell (op);
     fseek(op, 0, SEEK_SET);
-    if (fwrite(&objsize, sizeof(int), 1, fp) != 1) {
-       fexit(fp, __func__, __LINE__);
-    }
+    write(&objsize, INT, 1, fp);
     fflush(fp);
     #ifdef DEBUG
         fprintf(stderr, "\n%d, %s, %d, Function: %s, Line: %d\n", namelen, objname, objsize, __func__, __LINE__); 
@@ -234,21 +250,13 @@ int move_in_db(FILE *fp, FILE *op, char objname[]) {
     repeats = objsize / BLOCK;
     remain = objsize % BLOCK;
     for (i = 0; i < repeats; i++) {
-        if (fread(buffer, BLOCK, 1, op) !=  1) {
-            fexit(op, __func__, __LINE__);
-        }
-        if (fwrite(buffer, BLOCK, 1, fp) != 1) {
-            fexit(fp, __func__, __LINE__);
-        }
+        read(buffer, BLOCK, 1, op);
+        write(buffer, BLOCK, 1, fp);
         fflush(fp);
     }
     if (remain != 0) {
-        if (fread(buffer, remain, 1, op) != 1) {
-            fexit(op, __func__, __LINE__);
-        }
-        if (fwrite(buffer, remain, 1, fp) != 1) {
-            fexit(fp, __func__, __LINE__);
-        }
+        read(buffer, remain, 1, op);
+        write(buffer, remain, 1, fp);
         fflush(fp);
     }
     
