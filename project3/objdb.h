@@ -22,6 +22,7 @@
     void deleteResult(FindResult *result, int called_by);
     int move_in_db(FILE *fp, FILE *op, char objname[]);
     int move_from_db(FILE *fp, FILE *op, char fname[], int object_position);
+    int move_within_db(FILE *fp, int object_position);
     int import(FILE **fp, char fname[], char objname[]);
     int export (FILE **fp, char objname[], char fname[]);
     int delete(FILE **fp, char name[], char dbname[]);
