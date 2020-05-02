@@ -422,17 +422,17 @@ int export (FILE **fp, char objname[], char fname[]) {
         return DB_ERROR;
     }
 
+    result = find(&(*fp), objname, IMPORT);
+    if (result->num_results == 0) {
+        deleteResult(result, IMPORT);
+        return 0;
+    }
     op = fopen(fname, "wbx");
     /* File already exists or couldnt be opened. */
     if (op == NULL ) {
         return -2;
     }
 
-    result = find(&(*fp), objname, IMPORT);
-    if (result->num_results == 0) {
-        deleteResult(result, IMPORT);
-        return 0;
-    }
     object_position = result->object_position;
     move_from_db(*fp, op, fname, object_position);
     
