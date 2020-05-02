@@ -27,11 +27,11 @@ int close(FILE **fp) {
 }
 
 /* Called when an error has occured. */
-void fexit(FILE *fp, const char func[], const int line) {
+void fexit(FILE **fp, const char func[], const int line) {
     #ifdef DEBUG
         fprintf(stderr, "\nError in function: %s\nLine: %d\n", func, line);
     #endif
-    close(&fp);
+    close(&(*fp));
     exit(EXIT_FAILURE);
 }
 
@@ -42,16 +42,21 @@ void fexit(FILE *fp, const char func[], const int line) {
 void read(void *ptr, int size_t_, int nmemb, FILE *stream) {
     int bytes_written = 0, bytes_wanted;
 
+    bytes_wanted = nmemb;
+    
     if (size_t_ == CHAR) {
         size_t_ = sizeof(char);
     }
     else if (size_t_ == INT) {
         size_t_ = sizeof(int);
     }
-    bytes_wanted = nmemb;
-    while (bytes_wanted == nmemb) {
+    
+    while (bytes_wanted == nmemb && !feof(stream) && !ferror(stream)) {
         bytes_written = fread(ptr, size_t_, nmemb, stream);
         bytes_wanted += bytes_written;
+    }
+    if (feof(stream) || ferror(stream)) {
+        fexit(&stream, __func__, __LINE__);
     }
 }
 
@@ -62,18 +67,24 @@ void read(void *ptr, int size_t_, int nmemb, FILE *stream) {
 void write(void *ptr, int size_t_, int nmemb, FILE *stream) {
     int bytes_written = 0, bytes_wanted;
 
+    bytes_wanted = nmemb;
+   
     if (size_t_ == CHAR) {
         size_t_ = sizeof(char);
     }
     else if (size_t_ == INT) {
         size_t_ = sizeof(int);
     }
-    bytes_wanted = nmemb;
-    while (bytes_wanted == nmemb) {
+    
+    while (bytes_wanted == nmemb && !feof(stream) && !ferror(stream)) {
         bytes_written = fwrite(ptr, size_t_, nmemb, stream);
         bytes_wanted += bytes_written;
     }
     fflush(stream);
+    if (feof(stream) || ferror(stream)) {
+        fexit(&stream, __func__, __LINE__);
+    }
+    
 }
 
 /* Validation of database.
@@ -136,27 +147,27 @@ int fend(FILE *fp) {
  * If called by import: find the exact name, the user gave and return the struct with num_results = 1.
  * In case there is not any open database return the struct with num_results = -1.
  */
-FindResult *find(FILE *fp, char name[], int called_by) {
+FindResult *find(FILE **fp, char name[], int called_by) {
     int objnamelen = 0, objsize = 0, names_len = 0, names_buffer_len = 100, num_results = 0;
     char objname[NAME_LEN] = {0}, *names_buffer = NULL;
     
     
     FindResult *result = (FindResult*)malloc(sizeof(FindResult));
     /* Check if there is open db. */
-    if (fp == NULL) {
+    if (*fp == NULL) {
         result->num_results = -1;
         return result;
     }
-    fseek(fp, MN_SIZE, SEEK_SET);
-    while (fend(fp)) {
+    fseek(*fp, MN_SIZE, SEEK_SET);
+    while (fend(*fp)) {
         objname[0] = '\0';
-        read(&objnamelen, INT, 1, fp);
+        read(&objnamelen, INT, 1, *fp);
         /* Check if object size is within limits. */
         if (objnamelen >= NAME_LEN) {
-            fexit(fp, __func__, __LINE__);
+            fexit(&(*fp), __func__, __LINE__);
         }
 
-        read(objname, CHAR, objnamelen, fp);
+        read(objname, CHAR, objnamelen, *fp);
         objname[objnamelen] = '\0';
         #ifdef DEBUG
                 fprintf(stderr, "objnamelen: %d, objname: %s\n", objnamelen, objname);
@@ -197,8 +208,8 @@ FindResult *find(FILE *fp, char name[], int called_by) {
         }
 
         /* Skip the actual object. */
-        read(&objsize, INT, 1, fp);
-        fseek(fp, objsize, SEEK_CUR);
+        read(&objsize, INT, 1, *fp);
+        fseek(*fp, objsize, SEEK_CUR);
     }
     /* If called by import and havent found that exact name in the database.
      * Return num_results = 0. */
@@ -332,13 +343,13 @@ int open(FILE **fp, char dbname[]) {
  * Return 0 -> No fname.
  * Return -2 -> Object name already in db.
  */
-int import(FILE *fp, char fname[], char objname[]) {
+int import(FILE **fp, char fname[], char objname[]) {
     FILE *op;
     int function_res;
     FindResult *result;
 
     /* No open db. */
-    if (fp == NULL) {
+    if (*fp == NULL) {
         return DB_ERROR;
     }
 
@@ -348,7 +359,7 @@ int import(FILE *fp, char fname[], char objname[]) {
         return 0;
     }
 
-    result = find(fp, objname, IMPORT);
+    result = find(&(*fp), objname, IMPORT);
     
     if (result->num_results > 0) {
         deleteResult(result, IMPORT);
@@ -357,9 +368,9 @@ int import(FILE *fp, char fname[], char objname[]) {
     }
     deleteResult(result, IMPORT);
 
-    function_res = move_in_db(fp, op, objname);
+    function_res = move_in_db(*fp, op, objname);
     if (!function_res) {
-        fexit(op, __func__, __LINE__);
+        fexit(&op, __func__, __LINE__);
     }
     fclose(op);
     return 1;
@@ -370,12 +381,12 @@ int import(FILE *fp, char fname[], char objname[]) {
  * Return 0 -> object not found.
  * Return -2 -> file already exists/cant open file.
  */
-int export (FILE *fp, char objname[], char fname[]) {
+int export (FILE **fp, char objname[], char fname[]) {
     FILE *op;
     FindResult *result;
 
     /* No open db. */
-    if (fp == NULL) {
+    if (*fp == NULL) {
         return DB_ERROR;
     }
 
@@ -385,7 +396,7 @@ int export (FILE *fp, char objname[], char fname[]) {
         return -2;
     }
 
-    result = find(fp, objname, IMPORT);
+    result = find(&(*fp), objname, IMPORT);
     if (result->num_results == 0) {
         deleteResult(result, IMPORT);
         return 0;
