@@ -17,14 +17,16 @@
     int open(FILE **fp, char dbname[]);
     int metadata(FILE *fp);
     int fend(FILE *fp);
+    int find_db_size(FILE *fp);
+    int find_obj_size(FILE *fp, int object_position);
     void move_512(FILE *dest, FILE *source, int objsize, long int start_dest, long int start_source);
     FindResult *find(FILE **fp, char name[], int called_by);
     void deleteResult(FindResult *result, int called_by);
     int move_in_db(FILE *fp, FILE *op, char objname[]);
     int move_from_db(FILE *fp, FILE *op, char fname[], int object_position);
-    int move_within_db(FILE *fp, int object_position);
+    int move_within_db(FILE *fp, int object_position, int objnamelen);
     int import(FILE **fp, char fname[], char objname[]);
-    int export (FILE **fp, char objname[], char fname[]);
+    int export(FILE **fp, char objname[], char fname[]);
     int delete(FILE **fp, char name[], char dbname[]);
     int closef(FILE **fp);
 #endif
