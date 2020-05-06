@@ -4,12 +4,8 @@
 #include "objdb.h"
 #include <stdlib.h>
 #define NAME_LEN 255
-#define DB_ERROR -1
-#define YES 1
-#define NO 0
 #define IMPORT 0
 #define FIND 1
-/*#define DEBUG*/
 
 int main (int argc, char *argv[]) {
     char option, dbname[NAME_LEN], fname[NAME_LEN], objname[NAME_LEN], name[NAME_LEN];
@@ -25,11 +21,6 @@ int main (int argc, char *argv[]) {
                 if (check == -1) {
                     printf("\nError opening %s.\n", dbname);
                 }
-                #ifdef DEBUG
-                    if (check == 1) {
-                        printf("\nBASE OK\n");
-                    }
-                #endif
                 if (check == 0) {
                     printf("\nInvalid db file %s.\n", dbname);
                 }
@@ -63,6 +54,8 @@ int main (int argc, char *argv[]) {
                 i = 0;
                 printf("\n##\n");
                 if (result->num_results > 0) {
+                    /* names_buffer format: [(name1)(space)(name2)(space)\0].
+                     * When result->num_results[i] is whitespace, change line and increase index and num (the counter num of num_results), by one. */
                     while(num < result->num_results - 1 || i < result->names_len - 1) {
                         if(result->names_buffer[i] == ' ') {
                             printf("\n");
@@ -89,11 +82,6 @@ int main (int argc, char *argv[]) {
                 if (check == -2) {
                     printf("\nCannot open file %s.\n", fname);
                 }
-                #ifdef DEBUG
-                if (check == 1) {
-                    printf("\nEXPORT OK.\n");
-                }
-                #endif
                 break;
             }
             case 'd': {
@@ -112,11 +100,6 @@ int main (int argc, char *argv[]) {
                 if (check == -1) {
                     printf("\nNo open db file.\n");
                 }
-                #ifdef DEBUG
-                else {
-                    printf("\nCLOSE OK\n");
-                }
-                #endif
                 break;
             }
             case 'q': {
