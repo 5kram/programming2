@@ -207,7 +207,7 @@ void fill_struct_wnames(FindResult **result, char *names_buffer, int num_results
 
 /* If called by find: find every object name which contain (or is equal with) the name, the user gave.
  * Return a struct with the names in a format: [(name1)(space)(name2)(space)\0] and the number of names found.
- * If called by import: find the exact name, the user gave and return the struct with num_results = 1.
+ * If called by other(import/export/delete): find the exact name, the user gave and return the struct with num_results = 1.
  * In case there is not any open database return the struct with num_results = -1.
  */
 FindResult *find(FILE **fp, char name[], int called_by) {
