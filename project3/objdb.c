@@ -7,7 +7,7 @@
 #define MN_SIZE 4
 #define BLOCK 512
 #define NAME_LEN 256
-#define IMPORT 0
+#define OTHER 0
 #define FIND 1
 #define CHAR -1
 #define INT 0
@@ -183,13 +183,35 @@ void move_512(FILE *dest, FILE *source, int objsize, long int start_dest, long i
     }
 }
 
+/* Fill the result-struct with data(number of results and the object position).
+ */
+void fill_struct_wdetails(FindResult **result, FILE *fp, int num_results, int objnamelen) {
+    int object_position = 0;
+    num_results++;
+    (*result)->num_results = num_results;
+    fseek(fp, -(objnamelen * sizeof(char) + sizeof(int)), SEEK_CUR);
+    object_position = ftell(fp);
+    (*result)->object_position = object_position;
+}
+
+/* Fill the result-struct with data(names, number of results and the length of buffer).
+ * Create offset in names_buffer.
+ */
+void fill_struct_wnames(FindResult **result, char *names_buffer, int num_results, int names_len) {
+    (*result)->names_buffer = (char*)malloc(names_len + 1);
+    (*result)->num_results = num_results;
+    memcpy((*result)->names_buffer, names_buffer, names_len);
+    (*result)->names_len = names_len;
+    (*result)->names_buffer[names_len] = '\0';
+}
+
 /* If called by find: find every object name which contain (or is equal with) the name, the user gave.
  * Return a struct with the names in a format: [(name1)(space)(name2)(space)\0] and the number of names found.
  * If called by import: find the exact name, the user gave and return the struct with num_results = 1.
  * In case there is not any open database return the struct with num_results = -1.
  */
 FindResult *find(FILE **fp, char name[], int called_by) {
-    int objnamelen = 0, objsize = 0, names_len = 0, names_buffer_len = 100, num_results = 0, object_position;
+    int objnamelen = 0, objsize = 0, names_len = 0, names_buffer_len = NAME_LEN, num_results = 0, i;
     char objname[NAME_LEN] = {0}, *names_buffer = NULL;
     FindResult *result = (FindResult*)malloc(sizeof(FindResult));
 
@@ -212,12 +234,12 @@ FindResult *find(FILE **fp, char name[], int called_by) {
         if (called_by == FIND) {
             /* If name is contained in this object name. */
             if (strstr (objname, name) != NULL || strcmp(name, "*") == 0) {
+                i = 0;
                 /* Reallocate space in names_buffer to store `objnamelen` + 1 bytes.
                  * names_buffer_len increased by objnamelen + 1 each time a name is stored. */
                 names_buffer_len = names_buffer_len + objnamelen + 1;
                 names_buffer = realloc(names_buffer, names_buffer_len);
                 /* Copy objname to names_buffer, create offset in names, increment num_results. */
-                int i = 0;
                 do {
                     names_buffer[names_len + i] = objname[i];
                     i++;
@@ -232,11 +254,7 @@ FindResult *find(FILE **fp, char name[], int called_by) {
         /* If called by import, return num_results = 1. */
         else {
             if (!strcmp(name, objname)) {
-                num_results++;
-                result->num_results = num_results;
-                fseek(*fp, -(objnamelen * sizeof(char) + sizeof(int)), SEEK_CUR);
-                object_position = ftell(*fp);
-                result->object_position = object_position;
+                fill_struct_wdetails(&result, *fp, num_results, objnamelen);
                 return result;
             }
         }
@@ -246,7 +264,7 @@ FindResult *find(FILE **fp, char name[], int called_by) {
     }
     /* If called by import and havent found that exact name in the database.
      * Return num_results = 0. */
-    if (called_by == IMPORT) {
+    if (called_by == OTHER) {
         result->num_results = num_results;
         return result;
     }
@@ -260,11 +278,8 @@ FindResult *find(FILE **fp, char name[], int called_by) {
         names_buffer[names_len] = '\0';
     }
     /* Fill the struct with data, that been computed above. */
-    result->names_buffer = (char*)malloc(names_len + 1);
-    result->num_results = num_results;
-    memcpy(result->names_buffer, names_buffer, names_len);
-    result->names_len = names_len;
-    result->names_buffer[names_len] = '\0';
+    fill_struct_wnames(&result, names_buffer, num_results, names_len);
+
     free(names_buffer);
     return result;
 }
@@ -299,9 +314,7 @@ int move_in_db(FILE *fp, FILE *op, char objname[]) {
 }
 
 /* Move an object, which is inside the database, to a new file. Move the object in blocks of 512 bytes.
- * If called by export, move the object in object_position from fp, to op.
- * If called by delete, move object(s) from database to database. dest_fp and source_fp are the same fp.
- * In that case, find the end of the object in object_position + move what comes after in object_position.
+ * Move the object in object_position from fp, to op.
  */
 int move_from_db(FILE *fp, FILE *op, char object_name[], int object_position) {
     int object_size = 0;
@@ -312,9 +325,9 @@ int move_from_db(FILE *fp, FILE *op, char object_name[], int object_position) {
     return 1;
 }
 
-/* Move an object(or more), which is inside the database, to a new position. Move the object in blocks of 512 bytes.
- * move object(s) from database to database. dest_fp and source_fp are the same fp.
- * In that case, find the end of the object in object_position + move what comes after in object_position.
+/* Re-position one or more objects in the database.
+ * Move the object(s) in blocks of 512 bytes.
+ * Find the end of the object in object_position + move what comes after in object_position.
  */
 int move_within_db(FILE *fp, int object_position, int objnamelen) {
     int database_size = 0, object_size = 0, moving_size = 0, size_obj_occupy = 0;
@@ -386,9 +399,9 @@ int import(FILE **fp, char fname[], char objname[]) {
     if (op == NULL ) {
         return 0;
     }
-    result = find(&(*fp), objname, IMPORT);
+    result = find(&(*fp), objname, OTHER);
     if (result->num_results > 0) {
-        deleteResult(result, IMPORT);
+        deleteResult(result, OTHER);
         fclose(op);
         return -2;
     }
@@ -397,7 +410,7 @@ int import(FILE **fp, char fname[], char objname[]) {
         fexit(&op, __func__, __LINE__);
     }
 
-    deleteResult(result, IMPORT);
+    deleteResult(result, OTHER);
     fclose(op);
     return 1;
 }
@@ -415,9 +428,9 @@ int export (FILE **fp, char objname[], char fname[]) {
     if (*fp == NULL) {
         return DB_ERROR;
     }
-    result = find(&(*fp), objname, IMPORT);
+    result = find(&(*fp), objname, OTHER);
     if (result->num_results == 0) {
-        deleteResult(result, IMPORT);
+        deleteResult(result, OTHER);
         return 0;
     }
     op = fopen(fname, "wbx");
@@ -428,7 +441,7 @@ int export (FILE **fp, char objname[], char fname[]) {
     object_position = result->object_position;
     move_from_db(*fp, op, fname, object_position);
     
-    deleteResult(result, IMPORT);
+    deleteResult(result, OTHER);
     fclose(op);
     return 1;
 }
@@ -445,9 +458,9 @@ int delete(FILE **fp, char name[], char dbname[]) {
     if (*fp == NULL) {
         return DB_ERROR;
     }
-    result = find(&(*fp), name, IMPORT);
+    result = find(&(*fp), name, OTHER);
     if (result->num_results == 0) {
-        deleteResult(result, IMPORT);
+        deleteResult(result, OTHER);
         return 0;
     }
     object_position = result->object_position;
@@ -457,6 +470,6 @@ int delete(FILE **fp, char name[], char dbname[]) {
     closef(&(*fp));
     truncate(dbname, database_size);
     *fp = fopen(dbname, "rb+");
-    deleteResult(result, IMPORT);
+    deleteResult(result, OTHER);
     return 1;
 }
