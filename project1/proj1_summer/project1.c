@@ -230,11 +230,11 @@ int rmv(database *db, long unsigned int uni_register, int fluctuation) {
         printf("\nR-NOK %lu, %d %d\n", uni_register, db->students, db->size);
     }
     else {
-        db->entries[pos]->name[0] = '\0';
+        //db->entries[pos]->name[0] = '\0';
         db->entries[pos]->uni_register = db->entries[db->students - 1]->uni_register;
-        name_len = strlen(db->entries[db->students - 1]->name);
-        memcpy(db->entries[pos]->name, db->entries[db->students -1]->name, name_len);
-       // strcpy(db->entries[pos]->name, db->entries[db->students -1]->name);
+        //strcpy(db->entries[pos]->name, db->entries[db->students -1]->name);
+        name_len = strlen(db->entries[db->students -1]->name);
+        memmove(db->entries[pos]->name, db->entries[db->students -1]->name, name_len + 1);
         db->entries[pos]->fails = db->entries[db->students - 1]->fails;
         free(db->entries[db->students - 1]);
         
